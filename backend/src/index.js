@@ -1,4 +1,5 @@
 import express from "express";
+import mqttRoutes from "#src/routes/mqttRoutes.js";
 
 const app = express();
 const PORT = 3000;
@@ -13,6 +14,8 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.send("Base endpoint. Express backend is running!");
 });
+
+app.use("/mqtt", mqttRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
