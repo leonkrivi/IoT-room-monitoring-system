@@ -3,6 +3,7 @@ import { publishMessage } from "#src/mqtt/mqttClient.js";
 
 const router = express.Router();
 
+// ==================== MQTT Publish Endpoint (for testing) ====================
 router.post("/publish", async (req, res) => {
   try {
     const { topic, message, qos = 0, retain = false } = req.body;
