@@ -6,7 +6,7 @@ const TAG = "[Influx Writer]";
 const config = {
   url: `http://localhost:${process.env.INFLUXDB_PORT || 8086}`,
   org: process.env.INFLUXDB_ORG,
-  token: process.env.INFLUXDB_BACKEND_TOKEN,
+  token: process.env.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN,
   bucket: process.env.INFLUXDB_BUCKET || "room_monitoring",
 };
 
@@ -32,8 +32,8 @@ export async function dbStoreProcessedEvent(event) {
     return false;
   }
 
-  const point = new Point("sensor_data")
-    .tag("room", event.room)
+  const point = new Point("mmWave_data_interpreted")
+    .tag("room_id", event.roomId)
     .tag("device_id", event.deviceId)
     // .intField("presence", event.presence)
     // .intField("motion", event.motion)

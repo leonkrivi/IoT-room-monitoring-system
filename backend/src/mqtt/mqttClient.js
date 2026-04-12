@@ -1,5 +1,11 @@
 import mqtt from "mqtt";
-import { parseMqttPayload } from "#src/mqtt/mqttPayloadParser.js";
+import {
+  parseConnectionStatusPayload,
+  parseJsonPayload,
+  parseMqttTopic,
+  parseRoomStatePayload,
+  parseSensorStatusPayload,
+} from "#src/mqtt/mqttPayloadParser.js";
 import { deriveRoomState } from "#src/messageProcessing/roomStateMachine.js";
 import { SeqOrderingManager } from "#src/messageProcessing/seqOrderingManager.js";
 import {
@@ -9,7 +15,11 @@ import {
 } from "#src/database/influxWriter.js";
 
 const MQTT_BROKER_URL = "mqtt://localhost:1883";
-const TOPIC_RECEIVE = "/test/backend";
+const TOPIC_RECEIVE_PATTERNS = [
+  "/room/+/device/+/room_state",
+  "/room/+/device/+/sensor/status",
+  "/room/+/device/+/connection/status",
+];
 
 const TAG = "[MQTT Client]";
 const orderingManager = new SeqOrderingManager({
@@ -25,14 +35,21 @@ export const client = mqtt.connect(MQTT_BROKER_URL);
 client.on("connect", () => {
   console.log(`${TAG} connected to broker at ` + MQTT_BROKER_URL);
 
-  client.subscribe(TOPIC_RECEIVE, (err) => {});
+  client.subscribe(TOPIC_RECEIVE_PATTERNS, (err) => {
+    if (err) {
+      console.error(`${TAG} failed to subscribe: ${err.message}`);
+      return;
+    }
+
+    console.log(`${TAG} subscribed to: ${TOPIC_RECEIVE_PATTERNS.join(", ")}`);
+  });
 });
 
 client.on("message", (topic, message) => {
   const rawPayload = message.toString();
 
   enqueueProcessing(async () => {
-    await processIncomingMqttMessage(rawPayload);
+    await processIncomingMqttMessage(topic, rawPayload);
   });
 });
 
@@ -66,38 +83,66 @@ function enqueueProcessing(job) {
   return processingChain;
 }
 
-async function processIncomingMqttMessage(rawPayload) {
-  let parsed;
+async function processIncomingMqttMessage(topic, rawPayload) {
   try {
-    // parse payload + pair with derived room state
-    parsed = parseMqttPayload(rawPayload); // return format { room, deviceId, seq, presence, motion }
-    const roomState = deriveRoomState(parsed);
+    const topicMeta = parseMqttTopic(topic);
+    const payload = parseJsonPayload(rawPayload);
 
-    // return format: { accepted: bool, droppedReason: string|null, readyEvents: [] }
-    const ingestResult = orderingManager.ingest(
-      { ...parsed, roomState },
-      Date.now(),
-    );
-
-    if (!ingestResult.accepted) {
-      console.warn(
-        `${TAG} dropped message (${parsed.room}::${parsed.deviceId}) seq=${parsed.seq}`,
-      );
-      console.warn(`=> reason: ${ingestResult.droppedReason}`);
+    if (topicMeta.type === "unknown") {
+      console.warn(`${TAG} ignored unsupported topic: ${topic}`);
       return;
     }
 
-    await storeReadyEvents(ingestResult.readyEvents);
+    if (topicMeta.type === "room_state") {
+      const roomStatePayload = parseRoomStatePayload(payload);
+      const roomState = deriveRoomState(roomStatePayload);
+
+      // return format: { accepted: bool, droppedReason: string|null, readyEvents: [] }
+      const ingestResult = orderingManager.ingest(
+        {
+          roomId: topicMeta.roomId,
+          deviceId: topicMeta.deviceId,
+          ...roomStatePayload,
+          roomState,
+        },
+        Date.now(),
+      );
+
+      if (!ingestResult.accepted) {
+        console.warn(
+          `${TAG} dropped room_state message (${topicMeta.roomId}::${topicMeta.deviceId}) seq=${roomStatePayload.seq}`,
+        );
+        console.warn(`=> reason: ${ingestResult.droppedReason}`);
+        return;
+      }
+
+      await storeReadyEvents(ingestResult.readyEvents);
+      return;
+    }
+
+    if (topicMeta.type === "sensor_status") {
+      const sensorStatusPayload = parseSensorStatusPayload(payload);
+      console.log(
+        `${TAG} validated sensor/status message (${topicMeta.roomId}::${topicMeta.deviceId}) seq=${sensorStatusPayload.seq} sensor=${sensorStatusPayload.sensor} hb_interval=${sensorStatusPayload.hbIntervalMs}ms`,
+      );
+      return;
+    }
+
+    if (topicMeta.type === "connection_status") {
+      const connectionPayload = parseConnectionStatusPayload(payload);
+      console.log(
+        `${TAG} validated connection/status message (${topicMeta.roomId}::${topicMeta.deviceId}) status=${connectionPayload.status}`,
+      );
+      return;
+    }
   } catch (err) {
-    console.warn(
-      `${TAG} dropped message (${parsed.room}::${parsed.deviceId}): seq=${parsed.seq}`,
-    );
+    console.warn(`${TAG} dropped message on topic=${topic}`);
     console.warn(`=> reason: ${err.message}`);
   }
 }
 
 async function storeReadyEvents(readyEvents) {
-  // event format: { room, deviceId, seq, presence, motion, roomState }
+  // event format: { roomId, deviceId, seq, presence, motion, sensorRateMs, roomState }
   for (const event of readyEvents) {
     const saved = await dbStoreProcessedEvent({
       ...event,
@@ -106,7 +151,7 @@ async function storeReadyEvents(readyEvents) {
 
     if (saved) {
       console.log(
-        `${TAG} stored (${event.room}::${event.deviceId}) seq=${event.seq} (p:${event.presence}, m:${event.motion}) state=${event.roomState}`,
+        `${TAG} stored (${event.roomId}::${event.deviceId}) seq=${event.seq} (p:${event.presence}, m:${event.motion}) state=${event.roomState}`,
       );
     }
   }
@@ -117,6 +162,7 @@ async function storeReadyEvents(readyEvents) {
 }
 
 // ==================== periodic Force Flush Logic ====================
+
 async function flushExpiredBuffers() {
   const readyEvents = orderingManager.flushExpired(Date.now());
   await storeReadyEvents(readyEvents);
@@ -131,6 +177,7 @@ const expiredBufferFlushTimer = setInterval(() => {
 }, EXPIRED_MESSAGES_FLUSH_INTERVAL_MS);
 
 // ==================== Graceful Shutdown Logic ====================
+
 export async function shutdownMqttPipeline() {
   clearInterval(expiredBufferFlushTimer);
   await processingChain;

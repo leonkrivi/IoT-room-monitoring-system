@@ -2,14 +2,14 @@ export class SeqOrderingManager {
   constructor({ maxBufferSize = 3, flushWindowMs = 1000 } = {}) {
     this.maxBufferSize = maxBufferSize; // first flush trigger
     this.flushWindowMs = flushWindowMs; // second flush trigger
-    this.deviceReadings = new Map(); // room::device_id -> { lastDrainedSeq, buffer: Map(seq -> message), firstBufferedAt }
+    this.deviceReadings = new Map(); // roomId::deviceId -> { lastDrainedSeq, buffer: Map(seq -> message), firstBufferedAt }
   }
 
   // keep ingesting until
   // - a gap is hit (next seq is not in buffer)
   // - or we hit the max buffer size / flush window => then flush all buffered messages even if there are gaps
   ingest(incoming, nowMs = Date.now()) {
-    const device = this.#getDevice(incoming.room, incoming.deviceId);
+    const device = this.#getDevice(incoming.roomId, incoming.deviceId);
 
     // incoming seq is stale or duplicate
     if (device.buffer.has(incoming.seq)) {
@@ -75,8 +75,8 @@ export class SeqOrderingManager {
     return readyEvents;
   }
 
-  #getDevice(room, deviceId) {
-    const key = `${room}::${deviceId}`;
+  #getDevice(roomId, deviceId) {
+    const key = `${roomId}::${deviceId}`;
 
     if (!this.deviceReadings.has(key)) {
       this.deviceReadings.set(key, {

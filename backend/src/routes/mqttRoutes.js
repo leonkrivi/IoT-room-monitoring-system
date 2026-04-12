@@ -22,6 +22,6 @@ router.post("/publish", async (req, res) => {
 });
 
 // development stage: run with
-// curl -X POST http://localhost:3000/mqtt/publish -H "Content-Type: application/json" -d '{"topic":"/test/backend","message":"Hello from backend!"}'
+// curl -X POST http://localhost:3000/mqtt/publish -H "Content-Type: application/json" -d '{"topic":"/room/01/device/01/room_state","message":"{\"seq\":1,\"presence\":1,\"motion\":2,\"sensor_rate\":5000}"}'
 
 export default router;
