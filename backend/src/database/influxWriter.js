@@ -5,18 +5,25 @@ const TAG = "[Influx Writer]";
 
 const config = {
   url: `http://localhost:${process.env.INFLUXDB_PORT || 8086}`,
-  org: process.env.INFLUXDB_ORG,
+  org: process.env.DOCKER_INFLUXDB_INIT_ORG,
   token: process.env.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN,
-  bucket: process.env.INFLUXDB_BUCKET || "room_monitoring",
+  bucket: process.env.DOCKER_INFLUXDB_INIT_BUCKET || "room_monitoring",
 };
 
 let writeApi = null;
 let enabled = false;
 
 if (!config.org || !config.token) {
-  console.warn(
-    `${TAG} disabled, missing INFLUXDB_ORG or INFLUXDB_BACKEND_TOKEN`,
-  );
+  const missingVars = [];
+  if (!config.org) {
+    missingVars.push("DOCKER_INFLUXDB_INIT_ORG");
+  }
+
+  if (!config.token) {
+    missingVars.push("DOCKER_INFLUXDB_INIT_ADMIN_TOKEN");
+  }
+
+  console.warn(`${TAG} disabled, missing ${missingVars.join(" and ")}`);
 } else {
   try {
     const influxDB = new InfluxDB({ url: config.url, token: config.token });
