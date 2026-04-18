@@ -1,9 +1,27 @@
 services:
-  influxdb:
+  backend:
     build:
       context: .
-      dockerfile: src/database/Dockerfile
-    image: influxdb:2.7-local
+      dockerfile: Dockerfile
+    image: node:22-bookworm-slim-local
+    container_name: backend
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      INFLUXDB_URL: ${INFLUXDB_URL}
+      INFLUXDB_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
+      INFLUXDB_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
+      INFLUXDB_BACKEND_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN} # TODO (prod): Use a separate backend token with appropriate permissions
+      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-mqtt://host.docker.internal:1883} # TODO make MQTT broker a separate service in the same Compose file
+      SQLITE_PATH: /app/data/app.db
+    volumes:
+      - ./data:/app/data # TODO (prod): Use a named volume
+
+  influxdb:
+    image: influxdb:2.7
     container_name: influxdb
     ports:
       - "${INFLUXDB_PORT:-8086}:8086"
@@ -15,7 +33,7 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD}
       DOCKER_INFLUXDB_INIT_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
       DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
-      DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-0}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-720h}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
@@ -23,7 +41,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # TODO(prod): Switch plaintext init env vars to Compose secrets using:
+  # TODO (prod): Switch plaintext init env vars to Compose secrets using:
   # DOCKER_INFLUXDB_INIT_USERNAME_FILE, DOCKER_INFLUXDB_INIT_PASSWORD_FILE,
   # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE.
 

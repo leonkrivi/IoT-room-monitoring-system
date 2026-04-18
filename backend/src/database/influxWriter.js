@@ -4,10 +4,10 @@ import { InfluxDB, Point } from "@influxdata/influxdb-client";
 const TAG = "[Influx Writer]";
 
 const config = {
-  url: `http://localhost:${process.env.INFLUXDB_PORT || 8086}`,
-  org: process.env.DOCKER_INFLUXDB_INIT_ORG,
-  token: process.env.DOCKER_INFLUXDB_INIT_ADMIN_TOKEN,
-  bucket: process.env.DOCKER_INFLUXDB_INIT_BUCKET || "room_monitoring",
+  url: process.env.INFLUXDB_URL,
+  org: process.env.INFLUXDB_ORG,
+  token: process.env.INFLUXDB_BACKEND_TOKEN,
+  bucket: process.env.INFLUXDB_BUCKET || "room_monitoring",
 };
 
 let writeApi = null;
@@ -15,14 +15,8 @@ let enabled = false;
 
 if (!config.org || !config.token) {
   const missingVars = [];
-  if (!config.org) {
-    missingVars.push("DOCKER_INFLUXDB_INIT_ORG");
-  }
-
-  if (!config.token) {
-    missingVars.push("DOCKER_INFLUXDB_INIT_ADMIN_TOKEN");
-  }
-
+  if (!config.org) missingVars.push("INFLUXDB_ORG");
+  if (!config.token) missingVars.push("INFLUXDB_BACKEND_TOKEN");
   console.warn(`${TAG} disabled, missing ${missingVars.join(" and ")}`);
 } else {
   try {

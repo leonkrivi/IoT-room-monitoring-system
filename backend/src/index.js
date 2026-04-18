@@ -3,7 +3,7 @@ import mqttRoutes from "#src/routes/mqttRoutes.js";
 import { shutdownMqttPipeline } from "#src/mqtt/mqttClient.js";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.BACKEND_PORT) || 3000;
 
 app.use(express.json());
 

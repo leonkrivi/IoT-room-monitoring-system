@@ -7,7 +7,7 @@ import {
 } from "#src/database/influxWriter.js";
 import { dbCloseSqliteStore } from "#src/database/sqliteStatusStore.js";
 
-const MQTT_BROKER_URL = "mqtt://localhost:1883";
+const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL;
 const TOPIC_RECEIVE_PATTERNS = [
   "/room/+/device/+/room_state",
   "/room/+/device/+/sensor/status",
