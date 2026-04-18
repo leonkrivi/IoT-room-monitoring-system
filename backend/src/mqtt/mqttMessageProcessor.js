@@ -13,6 +13,7 @@ import {
   dbFlushInfluxWrites,
 } from "#src/database/influxWriter.js";
 import {
+  dbStoreDeviceSeen,
   dbStoreDeviceConfig,
   dbStoreConnectionStatus,
   dbStoreSensorRate,
@@ -75,6 +76,20 @@ export function createMqttMessageProcessor({
     return hydrated;
   }
 
+  async function markDeviceSeen(roomId, deviceId, receivedAt) {
+    const stored = await dbStoreDeviceSeen({
+      roomId,
+      deviceId,
+      receivedAt,
+    });
+
+    if (!stored) {
+      console.warn(
+        `${tag} skipped SQLite devices write (${roomId}::${deviceId})`,
+      );
+    }
+  }
+
   async function processIncomingMqttMessage(topic, rawPayload) {
     try {
       const topicMeta = parseMqttTopic(topic);
@@ -112,6 +127,9 @@ export function createMqttMessageProcessor({
   async function handleRoomStateMessage(topicMeta, payload) {
     const roomStatePayload = parseRoomStatePayload(payload);
     const roomState = deriveRoomState(roomStatePayload);
+    const receivedAt = new Date();
+
+    await markDeviceSeen(topicMeta.roomId, topicMeta.deviceId, receivedAt);
 
     // return format: { accepted: bool, droppedReason: string|null, readyEvents: [] }
     const ingestResult = orderingManager.ingest(
@@ -137,6 +155,9 @@ export function createMqttMessageProcessor({
 
   async function handleSensorStatusMessage(topicMeta, payload) {
     const sensorStatusPayload = parseSensorStatusPayload(payload);
+    const receivedAt = new Date();
+
+    await markDeviceSeen(topicMeta.roomId, topicMeta.deviceId, receivedAt);
 
     if (
       isStaleSensorStatusSeq(
@@ -157,7 +178,6 @@ export function createMqttMessageProcessor({
       sensorStatusPayload.seq,
     );
 
-    const receivedAt = new Date();
     const cachedSensorStatus = getOrInitDeviceStatus(
       topicMeta.roomId,
       topicMeta.deviceId,
@@ -205,12 +225,13 @@ export function createMqttMessageProcessor({
 
   async function handleConnectionStatusMessage(topicMeta, payload) {
     const connectionPayload = parseConnectionStatusPayload(payload);
+    const receivedAt = new Date();
 
     await dbStoreConnectionStatus({
       roomId: topicMeta.roomId,
       deviceId: topicMeta.deviceId,
       connectionStatus: connectionPayload.status,
-      receivedAt: new Date(),
+      receivedAt,
     });
 
     console.log(
@@ -221,13 +242,16 @@ export function createMqttMessageProcessor({
   async function handleResetMessage(topicMeta, payload) {
     const resetPayload = parseResetPayload(payload);
     const key = getDeviceKey(topicMeta.roomId, topicMeta.deviceId);
+    const receivedAt = new Date();
+
+    await markDeviceSeen(topicMeta.roomId, topicMeta.deviceId, receivedAt);
 
     orderingManager.resetDeviceState(
       topicMeta.roomId,
       topicMeta.deviceId,
       resetPayload.stateSeq,
     );
-    sensorStatusSeqByDevice.set(key, resetPayload.sensorSeq);
+    sensorStatusSeqByDevice.set(key, resetPayload.sensorSeq - 1);
 
     const cachedConfig = getOrInitDeviceConfig(
       topicMeta.roomId,
@@ -241,7 +265,7 @@ export function createMqttMessageProcessor({
       deviceId: topicMeta.deviceId,
       hbIntervalMs: resetPayload.hbRateMs,
       sensorRateMs: resetPayload.sensorRateMs,
-      receivedAt: new Date(),
+      receivedAt,
     });
 
     if (!stored) {

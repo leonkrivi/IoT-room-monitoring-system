@@ -65,6 +65,7 @@ const SQL = {
 };
 
 let stmts = null;
+let txStoreDeviceSeen = null;
 let txStoreSensorStatus = null;
 let txStoreSensorRate = null;
 let txStoreDeviceConfig = null;
@@ -116,6 +117,11 @@ function buildStatements() {
     upsertSensorRate: db.prepare(SQL.upsertSensorRate),
     upsertDeviceConfig: db.prepare(SQL.upsertDeviceConfig),
   };
+
+  txStoreDeviceSeen = db.transaction(({ roomId, deviceId, receivedAt }) => {
+    stmts.upsertDeviceSeen.run(roomId, deviceId, receivedAt, receivedAt);
+    return true;
+  });
 
   txStoreSensorStatus = db.transaction(
     ({ roomId, deviceId, sensorStatus, hbIntervalMs, receivedAt }) => {
@@ -182,6 +188,21 @@ function initSqlite() {
 }
 
 initSqlite();
+
+export async function dbStoreDeviceSeen({ roomId, deviceId, receivedAt }) {
+  if (!ensureEnabled()) {
+    return false;
+  }
+
+  const ids = normalizeIds(roomId, deviceId);
+  const normalizedReceivedAt = asIsoDateString(receivedAt, "receivedAt");
+
+  return txStoreDeviceSeen({
+    roomId: ids.roomId,
+    deviceId: ids.deviceId,
+    receivedAt: normalizedReceivedAt,
+  });
+}
 
 export async function dbStoreSensorStatus({
   roomId,
