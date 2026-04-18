@@ -12,6 +12,7 @@ const TOPIC_RECEIVE_PATTERNS = [
   "/room/+/device/+/room_state",
   "/room/+/device/+/sensor/status",
   "/room/+/device/+/connection/status",
+  "/room/+/device/+/reset",
 ];
 
 const TAG = "[MQTT Client]";
@@ -34,7 +35,9 @@ client.on("connect", () => {
       return;
     }
 
-    console.log(`${TAG} subscribed to: ${TOPIC_RECEIVE_PATTERNS.join(", ")}`);
+    console.log(
+      `${TAG} subscribed to: \n\t${TOPIC_RECEIVE_PATTERNS.join("\n\t")}`,
+    );
   });
 });
 

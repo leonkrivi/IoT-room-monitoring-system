@@ -2,6 +2,7 @@ import {
   parseConnectionStatusPayload,
   parseJsonPayload,
   parseMqttTopic,
+  parseResetPayload,
   parseRoomStatePayload,
   parseSensorStatusPayload,
 } from "#src/mqtt/mqttPayloadParser.js";
@@ -12,6 +13,7 @@ import {
   dbFlushInfluxWrites,
 } from "#src/database/influxWriter.js";
 import {
+  dbStoreDeviceConfig,
   dbStoreConnectionStatus,
   dbStoreSensorRate,
   dbStoreSensorStatus,
@@ -95,6 +97,11 @@ export function createMqttMessageProcessor({
 
       if (topicMeta.type === "connection_status") {
         await handleConnectionStatusMessage(topicMeta, payload);
+        return;
+      }
+
+      if (topicMeta.type === "reset") {
+        await handleResetMessage(topicMeta, payload);
       }
     } catch (err) {
       console.warn(`${tag} dropped message on topic=${topic}`);
@@ -208,6 +215,45 @@ export function createMqttMessageProcessor({
 
     console.log(
       `${tag} validated connection/status message (${topicMeta.roomId}::${topicMeta.deviceId}) status=${connectionPayload.status}`,
+    );
+  }
+
+  async function handleResetMessage(topicMeta, payload) {
+    const resetPayload = parseResetPayload(payload);
+    const key = getDeviceKey(topicMeta.roomId, topicMeta.deviceId);
+
+    orderingManager.resetDeviceState(
+      topicMeta.roomId,
+      topicMeta.deviceId,
+      resetPayload.stateSeq,
+    );
+    sensorStatusSeqByDevice.set(key, resetPayload.sensorSeq);
+
+    const cachedConfig = getOrInitDeviceConfig(
+      topicMeta.roomId,
+      topicMeta.deviceId,
+    );
+    cachedConfig.hbIntervalMs = resetPayload.hbRateMs;
+    cachedConfig.sensorRateMs = resetPayload.sensorRateMs;
+
+    const stored = await dbStoreDeviceConfig({
+      roomId: topicMeta.roomId,
+      deviceId: topicMeta.deviceId,
+      hbIntervalMs: resetPayload.hbRateMs,
+      sensorRateMs: resetPayload.sensorRateMs,
+      receivedAt: new Date(),
+    });
+
+    if (!stored) {
+      console.warn(
+        `${tag} skipped SQLite reset config write (${topicMeta.roomId}::${topicMeta.deviceId})`,
+      );
+    }
+
+    deviceStatusByDevice.set(key, null);
+
+    console.log(
+      `${tag} applied reset (${topicMeta.roomId}::${topicMeta.deviceId}) state_seq=${resetPayload.stateSeq} sensor_seq=${resetPayload.sensorSeq} hb_rate=${resetPayload.hbRateMs} sensor_rate=${resetPayload.sensorRateMs}`,
     );
   }
 

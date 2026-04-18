@@ -52,11 +52,22 @@ const SQL = {
     DO UPDATE SET
       sensor_rate_ms = excluded.sensor_rate_ms
   `,
+  upsertDeviceConfig: `
+    INSERT INTO device_config (
+      room_id, device_id, hb_interval_ms, sensor_rate_ms
+    )
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(room_id, device_id)
+    DO UPDATE SET
+      hb_interval_ms = excluded.hb_interval_ms,
+      sensor_rate_ms = excluded.sensor_rate_ms
+  `,
 };
 
 let stmts = null;
 let txStoreSensorStatus = null;
 let txStoreSensorRate = null;
+let txStoreDeviceConfig = null;
 
 function parseNumericId(value, fieldName) {
   const parsed = Number(value);
@@ -103,6 +114,7 @@ function buildStatements() {
     upsertConnectionStatus: db.prepare(SQL.upsertConnectionStatus),
     upsertHbInterval: db.prepare(SQL.upsertHbInterval),
     upsertSensorRate: db.prepare(SQL.upsertSensorRate),
+    upsertDeviceConfig: db.prepare(SQL.upsertDeviceConfig),
   };
 
   txStoreSensorStatus = db.transaction(
@@ -124,6 +136,20 @@ function buildStatements() {
     ({ roomId, deviceId, sensorRateMs, receivedAt }) => {
       stmts.upsertDeviceSeen.run(roomId, deviceId, receivedAt, receivedAt);
       stmts.upsertSensorRate.run(roomId, deviceId, sensorRateMs);
+
+      return true;
+    },
+  );
+
+  txStoreDeviceConfig = db.transaction(
+    ({ roomId, deviceId, hbIntervalMs, sensorRateMs, receivedAt }) => {
+      stmts.upsertDeviceSeen.run(roomId, deviceId, receivedAt, receivedAt);
+      stmts.upsertDeviceConfig.run(
+        roomId,
+        deviceId,
+        hbIntervalMs,
+        sensorRateMs,
+      );
 
       return true;
     },
@@ -225,6 +251,29 @@ export async function dbStoreSensorRate({
   return txStoreSensorRate({
     roomId: ids.roomId,
     deviceId: ids.deviceId,
+    sensorRateMs,
+    receivedAt: normalizedReceivedAt,
+  });
+}
+
+export async function dbStoreDeviceConfig({
+  roomId,
+  deviceId,
+  hbIntervalMs,
+  sensorRateMs,
+  receivedAt,
+}) {
+  if (!ensureEnabled()) {
+    return false;
+  }
+
+  const ids = normalizeIds(roomId, deviceId);
+  const normalizedReceivedAt = asIsoDateString(receivedAt, "receivedAt");
+
+  return txStoreDeviceConfig({
+    roomId: ids.roomId,
+    deviceId: ids.deviceId,
+    hbIntervalMs,
     sensorRateMs,
     receivedAt: normalizedReceivedAt,
   });

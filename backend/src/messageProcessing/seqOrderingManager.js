@@ -75,6 +75,14 @@ export class SeqOrderingManager {
     return readyEvents;
   }
 
+  resetDeviceState(roomId, deviceId, stateSeq) {
+    const device = this.#getDevice(roomId, deviceId);
+
+    device.lastDrainedSeq = stateSeq;
+    device.buffer.clear();
+    device.firstBufferedAt = null;
+  }
+
   #getDevice(roomId, deviceId) {
     const key = `${roomId}::${deviceId}`;
 

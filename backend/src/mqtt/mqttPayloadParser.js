@@ -4,6 +4,7 @@ const TOPIC_TYPES = {
   ROOM_STATE: "room_state",
   SENSOR_STATUS: "sensor_status",
   CONNECTION_STATUS: "connection_status",
+  RESET: "reset",
   UNKNOWN: "unknown",
 };
 
@@ -19,6 +20,10 @@ const TOPIC_PATTERNS = [
   {
     type: TOPIC_TYPES.CONNECTION_STATUS,
     regex: /^\/room\/([^/]+)\/device\/([^/]+)\/connection\/status$/,
+  },
+  {
+    type: TOPIC_TYPES.RESET,
+    regex: /^\/room\/([^/]+)\/device\/([^/]+)\/reset$/,
   },
 ];
 
@@ -121,5 +126,26 @@ export function parseSensorStatusPayload(payload) {
 export function parseConnectionStatusPayload(payload) {
   return {
     status: ensureEnumString(payload.status, "status", ["online", "offline"]),
+  };
+}
+
+export function parseResetPayload(payload) {
+  const {
+    hb_rate: hbRate,
+    sensor_rate: sensorRate,
+    state_seq: stateSeq,
+    sensor_seq: sensorSeq,
+  } = payload;
+
+  ensureNonNegativeInteger(hbRate, "hb_rate");
+  ensureNonNegativeInteger(sensorRate, "sensor_rate");
+  ensureNonNegativeInteger(stateSeq, "state_seq");
+  ensureNonNegativeInteger(sensorSeq, "sensor_seq");
+
+  return {
+    hbRateMs: hbRate,
+    sensorRateMs: sensorRate,
+    stateSeq,
+    sensorSeq,
   };
 }
