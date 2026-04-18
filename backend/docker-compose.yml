@@ -1,6 +1,9 @@
 services:
   influxdb:
-    image: influxdb:2.7
+    build:
+      context: .
+      dockerfile: src/database/Dockerfile
+    image: influxdb:2.7-local
     container_name: influxdb
     ports:
       - "${INFLUXDB_PORT:-8086}:8086"
@@ -19,24 +22,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
-  # TODO(next): Add backend service into compose.
-  # Planned shape (after backend containerization):
-  # backend:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   depends_on:
-  #     influxdb:
-  #       condition: service_healthy
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     # backend/src/database/influxWriter.js currently uses localhost + INFLUXDB_PORT.
-  #     # Refactor to support INFLUXDB_URL, then set INFLUXDB_URL=http://influxdb:8086.
-  #     INFLUXDB_URL: http://influxdb:8086
-  #   ports:
-  #     - "${BACKEND_PORT:-3000}:3000"
 
   # TODO(prod): Switch plaintext init env vars to Compose secrets using:
   # DOCKER_INFLUXDB_INIT_USERNAME_FILE, DOCKER_INFLUXDB_INIT_PASSWORD_FILE,
