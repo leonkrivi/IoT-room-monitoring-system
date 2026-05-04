@@ -12,12 +12,7 @@ export function createProcessingQueue({ tag }) {
     return processingChain;
   }
 
-  function waitForDrained() {
-    return processingChain;
-  }
-
   return {
     enqueue,
-    waitForDrained,
   };
 }

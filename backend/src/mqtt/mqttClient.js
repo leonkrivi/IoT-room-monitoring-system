@@ -17,8 +17,8 @@ const TOPIC_RECEIVE_PATTERNS = [
 
 const TAG = "[MQTT Client]";
 const EXPIRED_MESSAGES_FLUSH_INTERVAL_MS = 250;
-const messageProcessor = createMqttMessageProcessor({ tag: TAG });
-const { enqueue: enqueueProcessing, waitForDrained } = createProcessingQueue({
+const messageProcessor = createMqttMessageProcessor();
+const { enqueue: enqueueProcessing } = createProcessingQueue({
   tag: TAG,
 });
 
@@ -78,7 +78,6 @@ const expiredBufferFlushTimer = setInterval(() => {
 
 export async function shutdownMqttPipeline() {
   clearInterval(expiredBufferFlushTimer);
-  await waitForDrained();
   await dbFlushInfluxWrites();
   await dbCloseSqliteStore();
   await dbCloseInfluxWriter();
