@@ -5,7 +5,7 @@ import {
   dbFlushInfluxWrites,
   dbCloseInfluxWriter,
 } from "#src/database/influxWriter.js";
-import { statusStore } from "#src/database/sqliteStatusStore.js";
+import { statusStore } from "#src/database/sqliteStore.js";
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL;
 const TOPIC_RECEIVE_PATTERNS = [

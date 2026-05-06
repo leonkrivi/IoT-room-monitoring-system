@@ -1,10 +1,4 @@
-import {
-  dbStoreDeviceSeen,
-  dbStoreDeviceConfig,
-  dbStoreConnectionStatus,
-  dbStoreSensorRate,
-  dbStoreSensorStatus,
-} from "#src/database/sqliteStatusStore.js";
+import { statusStore } from "#src/database/sqliteStore.js";
 import {
   dbStoreProcessedEvent,
   dbFlushInfluxWrites,
@@ -14,7 +8,7 @@ const TAG = "[Persistence]";
 
 export function createPersistence() {
   async function markDeviceSeen(roomId, deviceId, receivedAt) {
-    const stored = await dbStoreDeviceSeen({
+    const stored = await statusStore.dbStoreDeviceSeen({
       roomId,
       deviceId,
       receivedAt,
@@ -34,7 +28,7 @@ export function createPersistence() {
     hbIntervalMs,
     receivedAt,
   }) {
-    const stored = await dbStoreSensorStatus({
+    const stored = await statusStore.dbStoreSensorStatus({
       roomId,
       deviceId,
       sensorStatus,
@@ -57,7 +51,7 @@ export function createPersistence() {
     connectionStatus,
     receivedAt,
   }) {
-    return dbStoreConnectionStatus({
+    return statusStore.dbStoreConnectionStatus({
       roomId,
       deviceId,
       connectionStatus,
@@ -72,7 +66,7 @@ export function createPersistence() {
     receivedAt,
     seq,
   }) {
-    const stored = await dbStoreSensorRate({
+    const stored = await statusStore.dbStoreSensorRate({
       roomId,
       deviceId,
       sensorRateMs,
@@ -95,7 +89,7 @@ export function createPersistence() {
     sensorRateMs,
     receivedAt,
   }) {
-    const stored = await dbStoreDeviceConfig({
+    const stored = await statusStore.dbStoreDeviceConfig({
       roomId,
       deviceId,
       hbIntervalMs,

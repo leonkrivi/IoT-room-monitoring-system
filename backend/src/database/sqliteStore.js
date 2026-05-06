@@ -1,0 +1,191 @@
+import fs from "node:fs";
+import path from "node:path";
+import Database from "better-sqlite3";
+import { z } from "zod";
+import { SQL } from "./sqliteQueries.js";
+
+const TAG = "[SQLite Store]";
+
+// Zod sheme za validaciju podataka
+const DeviceIdSchema = z.coerce.number().int();
+const DateSchema = z.preprocess((arg) => {
+  if (arg instanceof Date) return arg;
+  if (typeof arg === "string" || typeof arg === "number") return new Date(arg);
+  return arg;
+}, z.date());
+
+const BasePayload = z.object({
+  roomId: DeviceIdSchema,
+  deviceId: DeviceIdSchema,
+  receivedAt: DateSchema.transform((d) => d.toISOString()),
+});
+
+class sqliteStore {
+  #db;
+  #stmts = {};
+  #transactions = {};
+
+  constructor() {
+    const defaultPath = path.resolve(process.cwd(), "data", "app.db");
+    const sqlitePath = path.resolve(process.env.SQLITE_PATH || defaultPath);
+
+    this.#init(sqlitePath);
+  }
+
+  #init(sqlitePath) {
+    try {
+      const dbDir = path.dirname(sqlitePath);
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+      }
+
+      this.#db = new Database(sqlitePath);
+      this.#db.pragma("foreign_keys = ON");
+      this.#db.pragma("journal_mode = WAL");
+      this.#db.pragma("busy_timeout = 3000");
+
+      const schemaPath = new URL("./sqliteSchema.sql", import.meta.url);
+      const schemaSql = fs.readFileSync(schemaPath, "utf-8");
+      this.#db.exec(schemaSql);
+
+      this.#prepareStatements();
+      this.#prepareTransactions();
+
+      console.log(`${TAG} initialized at ${sqlitePath}`);
+    } catch (err) {
+      console.error(`${TAG} CRITICAL FAILURE: ${err.message}`);
+      throw err;
+    }
+  }
+
+  #prepareStatements() {
+    for (const [key, sql] of Object.entries(SQL)) {
+      this.#stmts[key] = this.#db.prepare(sql);
+    }
+  }
+
+  #prepareTransactions() {
+    this.#transactions.storeSensorStatus = this.#db.transaction((data) => {
+      this.#stmts.upsertDeviceSeen.run(
+        data.roomId,
+        data.deviceId,
+        data.receivedAt,
+        data.receivedAt,
+      );
+
+      if (data.sensorStatus !== undefined) {
+        this.#stmts.upsertSensorStatus.run(
+          data.roomId,
+          data.deviceId,
+          data.sensorStatus,
+        );
+      }
+      if (data.hbIntervalMs !== undefined) {
+        this.#stmts.upsertHbInterval.run(
+          data.roomId,
+          data.deviceId,
+          data.hbIntervalMs,
+        );
+      }
+    });
+
+    this.#transactions.storeDeviceConfig = this.#db.transaction((data) => {
+      this.#stmts.upsertDeviceSeen.run(
+        data.roomId,
+        data.deviceId,
+        data.receivedAt,
+        data.receivedAt,
+      );
+      this.#stmts.upsertDeviceConfig.run(
+        data.roomId,
+        data.deviceId,
+        data.hbIntervalMs,
+        data.sensorRateMs,
+      );
+    });
+
+    this.#transactions.storeConnectionStatus = this.#db.transaction((data) => {
+      this.#stmts.upsertDeviceSeen.run(
+        data.roomId,
+        data.deviceId,
+        data.receivedAt,
+        data.receivedAt,
+      );
+      return this.#stmts.upsertConnectionStatus.run(
+        data.roomId,
+        data.deviceId,
+        data.connectionStatus,
+      );
+    });
+
+    this.#transactions.storeSensorRate = this.#db.transaction((data) => {
+      this.#stmts.upsertDeviceSeen.run(
+        data.roomId,
+        data.deviceId,
+        data.receivedAt,
+        data.receivedAt,
+      );
+      return this.#stmts.upsertSensorRate.run(
+        data.roomId,
+        data.deviceId,
+        data.sensorRateMs,
+      );
+    });
+  }
+
+  // --- PUBLIC API ---
+
+  async dbStoreDeviceSeen(payload) {
+    const data = BasePayload.parse(payload);
+    return this.#stmts.upsertDeviceSeen.run(
+      data.roomId,
+      data.deviceId,
+      data.receivedAt,
+      data.receivedAt,
+    );
+  }
+
+  async dbStoreSensorStatus(payload) {
+    const schema = BasePayload.extend({
+      sensorStatus: z.string().optional(),
+      hbIntervalMs: z.number().int().optional(),
+    });
+    const data = schema.parse(payload);
+    return this.#transactions.storeSensorStatus(data);
+  }
+
+  async dbStoreConnectionStatus(payload) {
+    const schema = BasePayload.extend({
+      connectionStatus: z.string(),
+    });
+    const data = schema.parse(payload);
+    const result = this.#transactions.storeConnectionStatus(data);
+    return result.changes > 0;
+  }
+
+  async dbStoreSensorRate(payload) {
+    const schema = BasePayload.extend({
+      sensorRateMs: z.number().int(),
+    });
+    const data = schema.parse(payload);
+    return this.#transactions.storeSensorRate(data);
+  }
+
+  async dbStoreDeviceConfig(payload) {
+    const schema = BasePayload.extend({
+      hbIntervalMs: z.number().int(),
+      sensorRateMs: z.number().int(),
+    });
+    const data = schema.parse(payload);
+    return this.#transactions.storeDeviceConfig(data);
+  }
+
+  async dbCloseSqliteStore() {
+    if (this.#db) {
+      this.#db.close();
+      console.log(`${TAG} connection closed.`);
+    }
+  }
+}
+
+export const statusStore = new sqliteStore();

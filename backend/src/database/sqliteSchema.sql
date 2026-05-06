@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS devices (
 CREATE TABLE IF NOT EXISTS device_status (
   room_id INTEGER NOT NULL,
   device_id INTEGER NOT NULL,
-  sensor_status TEXT CHECK (sensor_status IN ('alive', 'dead')),
+  sensor_status TEXT CHECK (sensor_status IN ('alive', 'dead', 'unknown')),
   connection_status TEXT CHECK (connection_status IN ('online', 'offline')),
   PRIMARY KEY (room_id, device_id),
   FOREIGN KEY (room_id, device_id)
