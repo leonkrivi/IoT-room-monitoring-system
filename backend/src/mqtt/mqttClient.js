@@ -5,7 +5,7 @@ import {
   dbFlushInfluxWrites,
   dbCloseInfluxWriter,
 } from "#src/database/influxWriter.js";
-import { dbCloseSqliteStore } from "#src/database/sqliteStatusStore.js";
+import { statusStore } from "#src/database/sqliteStatusStore.js";
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL;
 const TOPIC_RECEIVE_PATTERNS = [
@@ -24,7 +24,8 @@ const { enqueue: enqueueProcessing } = createProcessingQueue({
 
 // ==================== MQTT Client Setup ====================
 
-export const client = mqtt.connect(MQTT_BROKER_URL);
+const client = mqtt.connect(MQTT_BROKER_URL);
+export { client };
 
 client.on("connect", () => {
   console.log(`${TAG} connected to broker at ` + MQTT_BROKER_URL);
@@ -34,7 +35,6 @@ client.on("connect", () => {
       console.error(`${TAG} failed to subscribe: ${err.message}`);
       return;
     }
-
     console.log(
       `${TAG} subscribed to: \n\t${TOPIC_RECEIVE_PATTERNS.join("\n\t")}`,
     );
@@ -53,17 +53,6 @@ client.on("offline", () => {
   console.log(`${TAG} client disconnected`);
 });
 
-export function publishMessage(topic, payload, options = {}) {
-  return new Promise((resolve, reject) => {
-    if (!client.connected)
-      return reject(new Error("MQTT client not connected"));
-    client.publish(topic, payload, options, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
-}
-
 // ==================== periodic Force Flush Logic ====================
 
 // flush expired messages for all devices to prevent messages from being stuck in the buffer indefinitely
@@ -79,6 +68,6 @@ const expiredBufferFlushTimer = setInterval(() => {
 export async function shutdownMqttPipeline() {
   clearInterval(expiredBufferFlushTimer);
   await dbFlushInfluxWrites();
-  await dbCloseSqliteStore();
+  await statusStore.dbCloseSqliteStore();
   await dbCloseInfluxWriter();
 }
