@@ -18,7 +18,7 @@ export function createSensorStatusHandler({ cache, persistence, tracker }) {
 
     tracker.remember(key, sensorStatusPayload.seq);
 
-    const cachedSensorStatus = cache.getOrInitStatus(
+    const cachedSensorStatus = cache.getOrInitSensorStatus(
       topicMeta.roomId,
       topicMeta.deviceId,
     );
@@ -44,7 +44,7 @@ export function createSensorStatusHandler({ cache, persistence, tracker }) {
     });
 
     if (sensorStatusChanged) {
-      cache.setStatus(
+      cache.setSensorStatus(
         topicMeta.roomId,
         topicMeta.deviceId,
         sensorStatusPayload.sensor,

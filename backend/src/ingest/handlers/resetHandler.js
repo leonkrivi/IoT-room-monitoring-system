@@ -36,7 +36,7 @@ export function createResetHandler({
       receivedAt,
     });
 
-    cache.setStatus(topicMeta.roomId, topicMeta.deviceId, null);
+    cache.setSensorStatus(topicMeta.roomId, topicMeta.deviceId, "unknown");
 
     console.log(
       `${TAG} applied reset (${topicMeta.roomId}::${topicMeta.deviceId}) state_seq=${resetPayload.stateSeq} sensor_seq=${resetPayload.sensorSeq} hb_rate=${resetPayload.hbRateMs} sensor_rate=${resetPayload.sensorRateMs}`,

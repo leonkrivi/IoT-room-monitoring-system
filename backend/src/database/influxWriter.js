@@ -14,10 +14,7 @@ let writeApi = null;
 let enabled = false;
 
 if (!config.org || !config.token) {
-  const missingVars = [];
-  if (!config.org) missingVars.push("INFLUXDB_ORG");
-  if (!config.token) missingVars.push("INFLUXDB_BACKEND_TOKEN");
-  console.warn(`${TAG} disabled, missing ${missingVars.join(" and ")}`);
+  console.warn(`${TAG} disabled, missing env variables`);
 } else {
   try {
     const influxDB = new InfluxDB({ url: config.url, token: config.token });

@@ -2,43 +2,37 @@ import { makeDeviceKey } from "#src/ingest/deviceKey.js";
 
 export function createDeviceCache() {
   const configByDevice = new Map();
-  const statusByDevice = new Map();
+  const sensorStatusByDevice = new Map();
 
   function getOrInitConfig(roomId, deviceId) {
     const key = makeDeviceKey(roomId, deviceId);
-    const cached = configByDevice.get(key);
-    if (cached) {
-      return cached;
-    }
+    if (configByDevice.has(key)) return configByDevice.get(key);
 
-    const hydrated = {
+    const init = {
       hbIntervalMs: null,
       sensorRateMs: null,
     };
-    configByDevice.set(key, hydrated);
-    return hydrated;
+    configByDevice.set(key, init);
+    return init;
   }
 
-  function getOrInitStatus(roomId, deviceId) {
+  function getOrInitSensorStatus(roomId, deviceId) {
     const key = makeDeviceKey(roomId, deviceId);
-    const cached = statusByDevice.get(key);
-    if (cached !== undefined) {
-      return cached;
-    }
+    if (sensorStatusByDevice.has(key)) return sensorStatusByDevice.get(key);
 
-    const hydrated = null;
-    statusByDevice.set(key, hydrated);
-    return hydrated;
+    const init = null;
+    sensorStatusByDevice.set(key, init);
+    return init;
   }
 
-  function setStatus(roomId, deviceId, status) {
+  function setSensorStatus(roomId, deviceId, sensorStatus) {
     const key = makeDeviceKey(roomId, deviceId);
-    statusByDevice.set(key, status);
+    sensorStatusByDevice.set(key, sensorStatus);
   }
 
   return {
     getOrInitConfig,
-    getOrInitStatus,
-    setStatus,
+    getOrInitSensorStatus,
+    setSensorStatus,
   };
 }
