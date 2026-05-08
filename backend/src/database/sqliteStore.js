@@ -1,8 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
-import Database from "better-sqlite3";
 import { z } from "zod";
 import { SQL } from "./sqliteQueries.js";
+import sqliteDbInstance from "./sqliteClient.js";
 
 const TAG = "[SQLite Store]";
 
@@ -26,36 +24,9 @@ class sqliteStore {
   #transactions = {};
 
   constructor() {
-    const defaultPath = path.resolve(process.cwd(), "data", "app.db");
-    const sqlitePath = path.resolve(process.env.SQLITE_PATH || defaultPath);
-
-    this.#init(sqlitePath);
-  }
-
-  #init(sqlitePath) {
-    try {
-      const dbDir = path.dirname(sqlitePath);
-      if (!fs.existsSync(dbDir)) {
-        fs.mkdirSync(dbDir, { recursive: true });
-      }
-
-      this.#db = new Database(sqlitePath);
-      this.#db.pragma("foreign_keys = ON");
-      this.#db.pragma("journal_mode = WAL");
-      this.#db.pragma("busy_timeout = 3000");
-
-      const schemaPath = new URL("./sqliteSchema.sql", import.meta.url);
-      const schemaSql = fs.readFileSync(schemaPath, "utf-8");
-      this.#db.exec(schemaSql);
-
-      this.#prepareStatements();
-      this.#prepareTransactions();
-
-      console.log(`${TAG} initialized at ${sqlitePath}`);
-    } catch (err) {
-      console.error(`${TAG} CRITICAL FAILURE: ${err.message}`);
-      throw err;
-    }
+    this.#db = sqliteDbInstance;
+    this.#prepareStatements();
+    this.#prepareTransactions();
   }
 
   #prepareStatements() {

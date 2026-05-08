@@ -3,8 +3,8 @@ import { createMqttMessageProcessor } from "#src/mqtt/mqttMessageProcessor.js";
 import { createProcessingQueue } from "#src/mqtt/processingQueue.js";
 import {
   dbFlushInfluxWrites,
-  dbCloseInfluxWriter,
-} from "#src/database/influxWriter.js";
+  dbCloseinfluxWrite,
+} from "#src/database/influxWrite.js";
 import { statusStore } from "#src/database/sqliteStore.js";
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL;
@@ -69,5 +69,5 @@ export async function shutdownMqttPipeline() {
   clearInterval(expiredBufferFlushTimer);
   await dbFlushInfluxWrites();
   await statusStore.dbCloseSqliteStore();
-  await dbCloseInfluxWriter();
+  await dbCloseinfluxWrite();
 }

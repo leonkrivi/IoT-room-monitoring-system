@@ -14,7 +14,9 @@ services:
       INFLUXDB_URL: ${INFLUXDB_URL}
       INFLUXDB_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
       INFLUXDB_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
+      INFLUXDB_DATA_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION}
       INFLUXDB_BACKEND_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN} # TODO (prod): Use a separate backend token with appropriate permissions
+
       MQTT_BROKER_URL: ${MQTT_BROKER_URL:-mqtt://host.docker.internal:1883} # TODO make MQTT broker a separate service in the same Compose file
       SQLITE_PATH: /app/data/app.db
     volumes:

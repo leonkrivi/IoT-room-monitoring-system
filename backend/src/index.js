@@ -1,4 +1,5 @@
 import express from "express";
+import roomStateRoutes from "#src/routes/roomStateRoutes.js";
 import mqttRoutes from "#src/routes/mqttRoutes.js";
 import { shutdownMqttPipeline } from "#src/mqtt/mqttClient.js";
 
@@ -12,9 +13,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => {
-  res.send("Base endpoint. Express backend is running!");
-});
+app.use("/api", roomStateRoutes);
 
 app.use("/mqtt", mqttRoutes);
 

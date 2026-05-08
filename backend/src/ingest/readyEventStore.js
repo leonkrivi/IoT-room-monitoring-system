@@ -21,7 +21,7 @@ export function createReadyEventStore({ cache, persistence }) {
         }
       }
 
-      const saved = await persistence.storeProcessedEvent({
+      const saved = await persistence.storeProcessedRoomState({
         ...event,
         processedAt: Date.now(),
       });

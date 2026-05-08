@@ -1,8 +1,8 @@
 import { statusStore } from "#src/database/sqliteStore.js";
 import {
-  dbStoreProcessedEvent,
+  dbStoreProcessedRoomState,
   dbFlushInfluxWrites,
-} from "#src/database/influxWriter.js";
+} from "#src/database/influxWrite.js";
 
 const TAG = "[Persistence]";
 
@@ -106,8 +106,8 @@ export function createPersistence() {
     return stored;
   }
 
-  async function storeProcessedEvent(event) {
-    return dbStoreProcessedEvent(event);
+  async function storeProcessedRoomState(event) {
+    return dbStoreProcessedRoomState(event);
   }
 
   async function flushInfluxWrites() {
@@ -120,7 +120,7 @@ export function createPersistence() {
     storeConnectionStatus,
     storeSensorRate,
     storeDeviceConfig,
-    storeProcessedEvent,
+    storeProcessedRoomState,
     flushInfluxWrites,
   };
 }
