@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { SQL } from "./sqliteQueries.js";
+import { SQLStore } from "./sqliteQueries.js";
 import sqliteDbInstance from "./sqliteClient.js";
 
 const TAG = "[SQLite Store]";
 
-// Zod sheme za validaciju podataka
-const DeviceIdSchema = z.coerce.number().int();
+// Zod schemas
+const RoomIdSchema = z.coerce.number().int();
 const DateSchema = z.preprocess((arg) => {
   if (arg instanceof Date) return arg;
   if (typeof arg === "string" || typeof arg === "number") return new Date(arg);
@@ -13,12 +13,12 @@ const DateSchema = z.preprocess((arg) => {
 }, z.date());
 
 const BasePayload = z.object({
-  roomId: DeviceIdSchema,
-  deviceId: DeviceIdSchema,
+  roomId: RoomIdSchema,
+  deviceId: RoomIdSchema,
   receivedAt: DateSchema.transform((d) => d.toISOString()),
 });
 
-class sqliteStore {
+class SqliteStore {
   #db;
   #stmts = {};
   #transactions = {};
@@ -30,7 +30,7 @@ class sqliteStore {
   }
 
   #prepareStatements() {
-    for (const [key, sql] of Object.entries(SQL)) {
+    for (const [key, sql] of Object.entries(SQLStore)) {
       this.#stmts[key] = this.#db.prepare(sql);
     }
   }
@@ -58,6 +58,7 @@ class sqliteStore {
           data.hbIntervalMs,
         );
       }
+      return true;
     });
 
     this.#transactions.storeDeviceConfig = this.#db.transaction((data) => {
@@ -73,6 +74,7 @@ class sqliteStore {
         data.hbIntervalMs,
         data.sensorRateMs,
       );
+      return true;
     });
 
     this.#transactions.storeConnectionStatus = this.#db.transaction((data) => {
@@ -82,11 +84,12 @@ class sqliteStore {
         data.receivedAt,
         data.receivedAt,
       );
-      return this.#stmts.upsertConnectionStatus.run(
+      this.#stmts.upsertConnectionStatus.run(
         data.roomId,
         data.deviceId,
         data.connectionStatus,
       );
+      return true;
     });
 
     this.#transactions.storeSensorRate = this.#db.transaction((data) => {
@@ -96,11 +99,12 @@ class sqliteStore {
         data.receivedAt,
         data.receivedAt,
       );
-      return this.#stmts.upsertSensorRate.run(
+      this.#stmts.upsertSensorRate.run(
         data.roomId,
         data.deviceId,
         data.sensorRateMs,
       );
+      return true;
     });
   }
 
@@ -130,8 +134,7 @@ class sqliteStore {
       connectionStatus: z.string(),
     });
     const data = schema.parse(payload);
-    const result = this.#transactions.storeConnectionStatus(data);
-    return result.changes > 0;
+    return this.#transactions.storeConnectionStatus(data);
   }
 
   async dbStoreSensorRate(payload) {
@@ -159,4 +162,4 @@ class sqliteStore {
   }
 }
 
-export const statusStore = new sqliteStore();
+export const sqliteStore = new SqliteStore();

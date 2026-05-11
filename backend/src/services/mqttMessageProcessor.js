@@ -2,10 +2,10 @@ import {
   parseJsonPayload,
   parseMqttTopic,
 } from "#src/mqtt/mqttPayloadParser.js";
-import { SeqOrderingManager } from "#src/ingest/seqOrderingManager.js";
-import { createDeviceCache } from "#src/ingest/deviceCache.js";
+import { SeqOrderingManager } from "#src/services/seqOrderingManager.js";
+import { deviceCache } from "#src/globals/instances.js";
 import { createLastSeqTracker } from "#src/ingest/lastSeqTracker.js";
-import { createPersistence } from "#src/ingest/persistence.js";
+import { createPersistence } from "#src/services/persistence.js";
 import { createReadyEventStore } from "#src/ingest/readyEventStore.js";
 import { createRoomStateHandler } from "#src/ingest/handlers/roomStateHandler.js";
 import { createSensorStatusHandler } from "#src/ingest/handlers/sensorStatusHandler.js";
@@ -22,11 +22,10 @@ export function createMqttMessageProcessor({
     maxBufferSize,
     flushWindowMs,
   });
-  const cache = createDeviceCache();
   const sensorStatusSeqTracker = createLastSeqTracker();
   const persistence = createPersistence();
   const readyEventStore = createReadyEventStore({
-    cache,
+    cache: deviceCache,
     persistence,
   });
 
@@ -37,7 +36,7 @@ export function createMqttMessageProcessor({
       readyEventStore,
     }),
     sensor_status: createSensorStatusHandler({
-      cache,
+      cache: deviceCache,
       persistence,
       tracker: sensorStatusSeqTracker,
     }),
@@ -46,7 +45,7 @@ export function createMqttMessageProcessor({
     }),
     reset: createResetHandler({
       orderingManager,
-      cache,
+      cache: deviceCache,
       persistence,
       tracker: sensorStatusSeqTracker,
     }),

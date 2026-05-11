@@ -1,4 +1,4 @@
-export const SQL = {
+export const SQLStore = {
   upsertDeviceSeen: `
       INSERT INTO devices (room_id, device_id, first_seen_at, last_seen_at)
       VALUES (?, ?, ?, ?)
@@ -54,5 +54,14 @@ export const SQL = {
       DO UPDATE SET
         hb_interval_ms = excluded.hb_interval_ms,
         sensor_rate_ms = excluded.sensor_rate_ms
+    `,
+};
+
+export const SQLFetch = {
+  getAllRoomIds: `
+      SELECT DISTINCT room_id FROM devices;
+    `,
+  getAllDeviceIdsForRoom: `
+      SELECT device_id FROM devices WHERE room_id = ?;
     `,
 };

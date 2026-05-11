@@ -26,6 +26,10 @@ if (!influxConfig.org || !influxConfig.token) {
       influxConfig.org,
       influxConfig.bucket,
       "ms",
+      {
+        maxRetries: 2, // two retries if write fails (e.g., if InfluxDB is temporarily unavailable)
+        maxBufferLines: 1000, // buffer up to 1000 points before flushing
+      },
     );
     influxQueryApi = influxDB.getQueryApi(influxConfig.org);
     influxEnabled = true;

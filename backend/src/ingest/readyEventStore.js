@@ -3,7 +3,10 @@ const TAG = "[ReadyEventStore]";
 export function createReadyEventStore({ cache, persistence }) {
   async function storeReadyEvents(readyEvents) {
     for (const event of readyEvents) {
-      const cachedConfig = cache.getOrInitConfig(event.roomId, event.deviceId);
+      const cachedConfig = cache.getOrInitDeviceConfig(
+        event.roomId,
+        event.deviceId,
+      );
       const sensorRateChanged =
         cachedConfig.sensorRateMs !== event.sensorRateMs;
 

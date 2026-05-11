@@ -1,5 +1,5 @@
 import { parseSensorStatusPayload } from "#src/mqtt/mqttPayloadParser.js";
-import { makeDeviceKey } from "#src/ingest/deviceKey.js";
+import { makeDeviceKey } from "#src/utils/deviceKey.js";
 
 const TAG = "[SensorStatusHandler]";
 
@@ -22,7 +22,7 @@ export function createSensorStatusHandler({ cache, persistence, tracker }) {
       topicMeta.roomId,
       topicMeta.deviceId,
     );
-    const cachedConfig = cache.getOrInitConfig(
+    const cachedConfig = cache.getOrInitDeviceConfig(
       topicMeta.roomId,
       topicMeta.deviceId,
     );

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 const TAG = "[mqttPayloadParser]";
 
 const TOPIC_TYPES = {
@@ -27,28 +29,63 @@ const TOPIC_PATTERNS = [
   },
 ];
 
-function ensureNonNegativeInteger(value, fieldName) {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(
-      `${TAG} invalid ${fieldName}: expected non-negative integer`,
-    );
-  }
-}
+// ====================== Validation Schemas ====================
 
-function ensureEnumString(value, fieldName, allowedValues) {
-  if (typeof value !== "string") {
-    throw new Error(`${TAG} invalid ${fieldName}: expected string`);
-  }
+const RoomStateSchema = z
+  .object({
+    seq: z.number().int().nonnegative(),
+    presence: z.union([z.literal(0), z.literal(1)]),
+    motion: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+    sensor_rate: z.number().int().nonnegative(),
+  })
+  .transform((data) => ({
+    seq: data.seq,
+    presence: data.presence,
+    motion: data.motion,
+    sensorRateMs: data.sensor_rate,
+  }));
 
-  const normalized = value.toLowerCase();
-  if (!allowedValues.includes(normalized)) {
-    throw new Error(
-      `${TAG} invalid ${fieldName}: expected one of ${allowedValues.join(", ")}`,
-    );
-  }
+const SensorStatusSchema = z
+  .object({
+    seq: z.number().int().nonnegative(),
+    sensor: z.preprocess(
+      (val) => (typeof val === "string" ? val.toLowerCase() : val),
+      z.enum(["alive", "dead"]),
+    ),
+    hb_interval: z.number().int().nonnegative(),
+  })
+  .transform((data) => ({
+    seq: data.seq,
+    sensor: data.sensor,
+    hbIntervalMs: data.hb_interval,
+  }));
 
-  return normalized;
-}
+const ConnectionStatusSchema = z
+  .object({
+    status: z.preprocess(
+      (val) => (typeof val === "string" ? val.toLowerCase() : val),
+      z.enum(["online", "offline"]),
+    ),
+  })
+  .transform((data) => ({
+    status: data.status,
+  }));
+
+const ResetSchema = z
+  .object({
+    hb_rate: z.number().int().nonnegative(),
+    sensor_rate: z.number().int().nonnegative(),
+    state_seq: z.number().int().nonnegative(),
+    sensor_seq: z.number().int().nonnegative(),
+  })
+  .transform((data) => ({
+    hbRateMs: data.hb_rate,
+    sensorRateMs: data.sensor_rate,
+    stateSeq: data.state_seq,
+    sensorSeq: data.sensor_seq,
+  }));
+
+// ==================== Exported Functions ====================
 
 export function parseJsonPayload(rawPayload) {
   let parsed;
@@ -89,63 +126,37 @@ export function parseMqttTopic(topic) {
 }
 
 export function parseRoomStatePayload(payload) {
-  const { seq, presence, motion, sensor_rate: sensorRate } = payload;
-
-  ensureNonNegativeInteger(seq, "seq");
-  ensureNonNegativeInteger(sensorRate, "sensor_rate");
-
-  if (presence !== 0 && presence !== 1) {
-    throw new Error(`${TAG} invalid presence: expected 0 or 1`);
+  try {
+    return RoomStateSchema.parse(payload);
+  } catch (err) {
+    throw new Error(`${TAG} validation failed for room_state: ${err.message}`);
   }
-
-  if (motion !== 0 && motion !== 1 && motion !== 2) {
-    throw new Error(`${TAG} invalid motion: expected 0, 1, or 2`);
-  }
-
-  return {
-    seq,
-    presence,
-    motion,
-    sensorRateMs: sensorRate,
-  };
 }
 
 export function parseSensorStatusPayload(payload) {
-  const { seq, sensor, hb_interval: hbInterval } = payload;
-
-  ensureNonNegativeInteger(seq, "seq");
-  ensureNonNegativeInteger(hbInterval, "hb_interval");
-
-  return {
-    seq,
-    sensor: ensureEnumString(sensor, "sensor", ["alive", "dead"]),
-    hbIntervalMs: hbInterval,
-  };
+  try {
+    return SensorStatusSchema.parse(payload);
+  } catch (err) {
+    throw new Error(
+      `${TAG} validation failed for sensor_status: ${err.message}`,
+    );
+  }
 }
 
 export function parseConnectionStatusPayload(payload) {
-  return {
-    status: ensureEnumString(payload.status, "status", ["online", "offline"]),
-  };
+  try {
+    return ConnectionStatusSchema.parse(payload);
+  } catch (err) {
+    throw new Error(
+      `${TAG} validation failed for connection_status: ${err.message}`,
+    );
+  }
 }
 
 export function parseResetPayload(payload) {
-  const {
-    hb_rate: hbRate,
-    sensor_rate: sensorRate,
-    state_seq: stateSeq,
-    sensor_seq: sensorSeq,
-  } = payload;
-
-  ensureNonNegativeInteger(hbRate, "hb_rate");
-  ensureNonNegativeInteger(sensorRate, "sensor_rate");
-  ensureNonNegativeInteger(stateSeq, "state_seq");
-  ensureNonNegativeInteger(sensorSeq, "sensor_seq");
-
-  return {
-    hbRateMs: hbRate,
-    sensorRateMs: sensorRate,
-    stateSeq,
-    sensorSeq,
-  };
+  try {
+    return ResetSchema.parse(payload);
+  } catch (err) {
+    throw new Error(`${TAG} validation failed for reset: ${err.message}`);
+  }
 }

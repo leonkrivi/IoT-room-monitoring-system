@@ -3,34 +3,9 @@ import { influxQueryApi, influxEnabled, influxConfig } from "./influxClient.js";
 
 const TAG = "[Influx Reader]";
 
-function parseDurationToMs(durationStr) {
-  if (!durationStr) return 0;
-
-  const cleanStr = durationStr.split("#")[0].trim();
-  const match = cleanStr.match(/^(\d+)([smhd]?)$/);
-
-  if (!match) return 0;
-
-  const value = parseInt(match[1], 10);
-  const unit = match[2];
-
-  switch (unit) {
-    case "s":
-      return value * 1000;
-    case "m":
-      return value * 60 * 1000;
-    case "h":
-      return value * 60 * 60 * 1000;
-    case "d":
-      return value * 24 * 60 * 60 * 1000;
-    default:
-      return value;
-  }
-}
-
 const DataRetentionMs = parseDurationToMs(process.env.INFLUXDB_DATA_RETENTION);
 
-export async function getRecentRoomStateHistory(
+export async function dbGetRecentRoomStateHistory(
   roomId,
   timeRangeDays = 1,
   granularity = "15m", // if not provided, defaults to 15 minutes granularity
@@ -69,7 +44,7 @@ export async function getRecentRoomStateHistory(
   return runQuery(fluxQuery);
 }
 
-export async function getRoomStateHistory(
+export async function dbGetRoomStateHistory(
   roomId, // integer
   timeRangeStart,
   timeRangeEnd,
@@ -143,4 +118,29 @@ function runQuery(fluxQuery) {
       complete: () => resolve(results),
     });
   });
+}
+
+function parseDurationToMs(durationStr) {
+  if (!durationStr) return 0;
+
+  const cleanStr = durationStr.split("#")[0].trim();
+  const match = cleanStr.match(/^(\d+)([smhd]?)$/);
+
+  if (!match) return 0;
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+
+  switch (unit) {
+    case "s":
+      return value * 1000;
+    case "m":
+      return value * 60 * 1000;
+    case "h":
+      return value * 60 * 60 * 1000;
+    case "d":
+      return value * 24 * 60 * 60 * 1000;
+    default:
+      return value;
+  }
 }

@@ -1,11 +1,11 @@
 import mqtt from "mqtt";
-import { createMqttMessageProcessor } from "#src/mqtt/mqttMessageProcessor.js";
-import { createProcessingQueue } from "#src/mqtt/processingQueue.js";
+import { createMqttMessageProcessor } from "#src/services/mqttMessageProcessor.js";
+import { createProcessingQueue } from "#src/services/processingQueue.js";
 import {
   dbFlushInfluxWrites,
   dbCloseinfluxWrite,
 } from "#src/database/influxWrite.js";
-import { statusStore } from "#src/database/sqliteStore.js";
+import { sqliteStore } from "#src/database/sqliteStore.js";
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL;
 const TOPIC_RECEIVE_PATTERNS = [
@@ -68,6 +68,6 @@ const expiredBufferFlushTimer = setInterval(() => {
 export async function shutdownMqttPipeline() {
   clearInterval(expiredBufferFlushTimer);
   await dbFlushInfluxWrites();
-  await statusStore.dbCloseSqliteStore();
+  await sqliteStore.dbCloseSqliteStore();
   await dbCloseinfluxWrite();
 }

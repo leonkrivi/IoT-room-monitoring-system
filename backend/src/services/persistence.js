@@ -1,4 +1,4 @@
-import { statusStore } from "#src/database/sqliteStore.js";
+import { sqliteStore } from "#src/database/sqliteStore.js";
 import {
   dbStoreProcessedRoomState,
   dbFlushInfluxWrites,
@@ -8,15 +8,17 @@ const TAG = "[Persistence]";
 
 export function createPersistence() {
   async function markDeviceSeen(roomId, deviceId, receivedAt) {
-    const stored = await statusStore.dbStoreDeviceSeen({
+    const stored = await sqliteStore.dbStoreDeviceSeen({
       roomId,
       deviceId,
       receivedAt,
     });
 
     if (!stored) {
-      console.warn(
-        `${TAG} skipped SQLite devices write (${roomId}::${deviceId})`,
+      console.warn(`${TAG} skipped device seen write (${roomId}::${deviceId})`);
+    } else {
+      console.log(
+        `${TAG} successfully wrote device seen (${roomId}::${deviceId})`,
       );
     }
   }
@@ -28,7 +30,7 @@ export function createPersistence() {
     hbIntervalMs,
     receivedAt,
   }) {
-    const stored = await statusStore.dbStoreSensorStatus({
+    const stored = await sqliteStore.dbStoreSensorStatus({
       roomId,
       deviceId,
       sensorStatus,
@@ -38,7 +40,11 @@ export function createPersistence() {
 
     if (!stored) {
       console.warn(
-        `${TAG} skipped SQLite sensor/status write (${roomId}::${deviceId})`,
+        `${TAG} skipped sensor/status write (${roomId}::${deviceId})`,
+      );
+    } else {
+      console.log(
+        `${TAG} successfully wrote sensor/status (${roomId}::${deviceId})`,
       );
     }
 
@@ -51,12 +57,24 @@ export function createPersistence() {
     connectionStatus,
     receivedAt,
   }) {
-    return statusStore.dbStoreConnectionStatus({
+    const stored = await sqliteStore.dbStoreConnectionStatus({
       roomId,
       deviceId,
       connectionStatus,
       receivedAt,
     });
+
+    if (!stored) {
+      console.warn(
+        `${TAG} skipped connection/status write (${roomId}::${deviceId})`,
+      );
+    } else {
+      console.log(
+        `${TAG} successfully wrote connection/status (${roomId}::${deviceId})`,
+      );
+    }
+
+    return stored;
   }
 
   async function storeSensorRate({
@@ -66,7 +84,7 @@ export function createPersistence() {
     receivedAt,
     seq,
   }) {
-    const stored = await statusStore.dbStoreSensorRate({
+    const stored = await sqliteStore.dbStoreSensorRate({
       roomId,
       deviceId,
       sensorRateMs,
@@ -75,7 +93,11 @@ export function createPersistence() {
 
     if (!stored) {
       console.warn(
-        `${TAG} skipped SQLite sensor_rate write (${roomId}::${deviceId}) seq=${seq}`,
+        `${TAG} skipped sensor_rate write (${roomId}::${deviceId}) seq=${seq}`,
+      );
+    } else {
+      console.log(
+        `${TAG} successfully wrote sensor_rate (${roomId}::${deviceId})`,
       );
     }
 
@@ -89,7 +111,7 @@ export function createPersistence() {
     sensorRateMs,
     receivedAt,
   }) {
-    const stored = await statusStore.dbStoreDeviceConfig({
+    const stored = await sqliteStore.dbStoreDeviceConfig({
       roomId,
       deviceId,
       hbIntervalMs,
@@ -99,7 +121,11 @@ export function createPersistence() {
 
     if (!stored) {
       console.warn(
-        `${TAG} skipped SQLite reset config write (${roomId}::${deviceId})`,
+        `${TAG} skipped reset config write (${roomId}::${deviceId})`,
+      );
+    } else {
+      console.log(
+        `${TAG} successfully wrote reset config (${roomId}::${deviceId})`,
       );
     }
 
