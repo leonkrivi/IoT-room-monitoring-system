@@ -68,6 +68,30 @@ export function createDeviceCache() {
     connectionByDevice.set(key, connection);
   }
 
+  // ==================== Hydration ====================
+  function hydrateCache(statuses, roomStates) {
+    for (const row of statuses) {
+      const { roomId, deviceId, sensorStatus, connectionStatus } = row;
+      const key = makeDeviceKey(roomId, deviceId);
+
+      if (sensorStatus !== undefined && sensorStatus !== null) {
+        sensorStatusByDevice.set(key, sensorStatus);
+      }
+      if (connectionStatus !== undefined && connectionStatus !== null) {
+        connectionByDevice.set(key, connectionStatus);
+      }
+    }
+
+    for (const row of roomStates) {
+      const { roomId, deviceId, roomState } = row;
+      const key = makeDeviceKey(roomId, deviceId);
+
+      if (roomState !== undefined && roomState !== null) {
+        roomStateByDevice.set(key, roomState);
+      }
+    }
+  }
+
   return {
     getOrInitDeviceRoomState,
     setDeviceRoomState,
@@ -76,5 +100,6 @@ export function createDeviceCache() {
     setSensorStatus,
     getOrInitDeviceConnection,
     setDeviceConnection,
+    hydrateCache,
   };
 }

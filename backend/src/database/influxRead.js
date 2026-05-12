@@ -38,10 +38,16 @@ export async function dbGetRecentRoomStateHistory(
         |> filter(fn: (r) => r["_field"] == "room_state")
         |> filter(fn: (r) => r["room_id"] == "${roomId}")
         |> aggregateWindow(every: ${qGranularity}, fn: last, createEmpty: false)
-        |> keep(columns: ["_time", "_value", "device_id"])
+        |> keep(columns: ["_time", "_value", "room_id", "device_id"])
     `;
 
-  return runQuery(fluxQuery);
+  const results = await runQuery(fluxQuery);
+  return results.map((r) => ({
+    roomId: r.room_id,
+    deviceId: r.device_id,
+    time: r.time,
+    roomState: r.room_state,
+  }));
 }
 
 export async function dbGetRoomStateHistory(
@@ -92,10 +98,47 @@ export async function dbGetRoomStateHistory(
         |> filter(fn: (r) => r["_field"] == "room_state")
         |> filter(fn: (r) => r["room_id"] == "${roomId}")
         |> aggregateWindow(every: ${qGranularity}, fn: last, createEmpty: false)
-        |> keep(columns: ["_time", "_value", "device_id"])
+        |> keep(columns: ["_time", "_value", "room_id", "device_id"])
     `;
 
-  return runQuery(fluxQuery);
+  const results = await runQuery(fluxQuery);
+  return results.map((r) => ({
+    roomId: r.room_id,
+    deviceId: r.device_id,
+    time: r.time,
+    roomState: r.room_state,
+  }));
+}
+
+export async function dbGetLastRoomStateForDevice(roomId, deviceId) {
+  if (!influxEnabled || !influxQueryApi) {
+    throw new Error(`${TAG} InfluxDB reader is not initialized.`);
+  }
+  const fluxQuery = `
+    from(bucket: "${influxConfig.bucket}")
+      |> range(start: -${DataRetentionMs}ms)
+      |> filter(fn: (r) => r["_measurement"] == "mmWave_data_interpreted")
+      |> filter(fn: (r) => r["_field"] == "room_state")
+      |> filter(fn: (r) => r["room_id"] == "${roomId}")
+      |> filter(fn: (r) => r["device_id"] == "${deviceId}")
+      |> last()
+      |> keep(columns: ["_time", "_value", "room_id", "device_id"])
+  `;
+
+  const results = await runQuery(fluxQuery);
+
+  if (results.length === 0) {
+    return { roomId, deviceId, roomState: null, time: null };
+  }
+
+  // extract first record
+  const firstRecord = results[0];
+  return {
+    roomId: firstRecord.room_id,
+    deviceId: firstRecord.device_id,
+    time: firstRecord.time,
+    roomState: firstRecord.room_state,
+  };
 }
 
 function runQuery(fluxQuery) {
@@ -106,9 +149,10 @@ function runQuery(fluxQuery) {
       next(row, tableMeta) {
         const o = tableMeta.toObject(row);
         results.push({
+          room_id: o.room_id,
+          device_id: o.device_id,
           time: o._time,
           room_state: o._value,
-          device_id: o.device_id,
         });
       },
       error: (error) => {

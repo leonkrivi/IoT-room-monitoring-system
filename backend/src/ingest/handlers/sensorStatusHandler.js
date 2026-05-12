@@ -1,5 +1,6 @@
 import { parseSensorStatusPayload } from "#src/mqtt/mqttPayloadParser.js";
 import { makeDeviceKey } from "#src/utils/deviceKey.js";
+import { eventBus } from "#src/utils/eventEmitter.js";
 
 const TAG = "[SensorStatusHandler]";
 
@@ -49,9 +50,18 @@ export function createSensorStatusHandler({ cache, persistence, tracker }) {
         topicMeta.deviceId,
         sensorStatusPayload.sensor,
       );
+      eventBus.emit("ws_broadcast", {
+        type: "sensor_update",
+        data: {
+          roomId: topicMeta.roomId,
+          deviceId: topicMeta.deviceId,
+          status: sensorStatusPayload.sensor,
+        },
+      });
     }
 
     if (hbIntervalChanged) {
+      // update cache with new hb interval even if sensor status didn't change
       cachedConfig.hbIntervalMs = sensorStatusPayload.hbIntervalMs;
     }
 

@@ -1,3 +1,5 @@
+import { eventBus } from "#src/utils/eventEmitter.js";
+
 const TAG = "[ReadyEventStore]";
 
 export function createReadyEventStore({ cache, persistence }) {
@@ -30,6 +32,15 @@ export function createReadyEventStore({ cache, persistence }) {
       });
 
       if (saved) {
+        cache.setDeviceRoomState(event.roomId, event.deviceId, event.roomState);
+        eventBus.emit("ws_broadcast", {
+          type: "room_state_update",
+          data: {
+            roomId: event.roomId,
+            deviceId: event.deviceId,
+            roomState: event.roomState,
+          },
+        });
         console.log(
           `${TAG} stored (${event.roomId}::${event.deviceId}) seq=${event.seq} (p:${event.presence}, m:${event.motion}) state=${event.roomState}`,
         );

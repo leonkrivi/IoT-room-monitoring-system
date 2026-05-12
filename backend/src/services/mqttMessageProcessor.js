@@ -3,7 +3,7 @@ import {
   parseMqttTopic,
 } from "#src/mqtt/mqttPayloadParser.js";
 import { SeqOrderingManager } from "#src/services/seqOrderingManager.js";
-import { deviceCache } from "#src/globals/instances.js";
+import { deviceCache } from "#src/globals/cache.js";
 import { createLastSeqTracker } from "#src/ingest/lastSeqTracker.js";
 import { createPersistence } from "#src/services/persistence.js";
 import { createReadyEventStore } from "#src/ingest/readyEventStore.js";
@@ -41,6 +41,7 @@ export function createMqttMessageProcessor({
       tracker: sensorStatusSeqTracker,
     }),
     connection_status: createConnectionStatusHandler({
+      cache: deviceCache,
       persistence,
     }),
     reset: createResetHandler({

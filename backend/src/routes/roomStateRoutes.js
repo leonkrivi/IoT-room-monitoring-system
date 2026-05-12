@@ -1,8 +1,7 @@
 import express from "express";
-import { createDataFetcher } from "#src/services/dataFetcher.js";
+import { dataFetcher } from "#src/globals/dataFetcher.js";
 
 const router = express.Router();
-const dataFetcher = createDataFetcher();
 
 // ==================== Room State Endpoints ====================
 

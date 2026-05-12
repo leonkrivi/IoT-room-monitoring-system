@@ -1,5 +1,6 @@
 import { parseResetPayload } from "#src/mqtt/mqttPayloadParser.js";
 import { makeDeviceKey } from "#src/utils/deviceKey.js";
+import { eventBus } from "#src/utils/eventEmitter.js";
 
 const TAG = "[ResetHandler]";
 
@@ -37,6 +38,14 @@ export function createResetHandler({
     });
 
     cache.setSensorStatus(topicMeta.roomId, topicMeta.deviceId, "unknown");
+    eventBus.emit("ws_broadcast", {
+      type: "sensor_update",
+      data: {
+        roomId: topicMeta.roomId,
+        deviceId: topicMeta.deviceId,
+        status: "unknown",
+      },
+    });
 
     console.log(
       `${TAG} applied reset (${topicMeta.roomId}::${topicMeta.deviceId}) state_seq=${resetPayload.stateSeq} sensor_seq=${resetPayload.sensorSeq} hb_rate=${resetPayload.hbRateMs} sensor_rate=${resetPayload.sensorRateMs}`,

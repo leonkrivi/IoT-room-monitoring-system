@@ -5,7 +5,7 @@ import sqliteDbInstance from "./sqliteClient.js";
 const TAG = "[SQLite Store]";
 
 // Zod schemas
-const RoomIdSchema = z.coerce.number().int();
+const RoomIdSchema = z.union([z.string(), z.number()]).transform((val) => String(val).padStart(2, "0"));
 const DateSchema = z.preprocess((arg) => {
   if (arg instanceof Date) return arg;
   if (typeof arg === "string" || typeof arg === "number") return new Date(arg);

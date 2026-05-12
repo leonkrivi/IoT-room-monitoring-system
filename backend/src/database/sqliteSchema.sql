@@ -1,16 +1,16 @@
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS devices (
-  room_id INTEGER NOT NULL,
-  device_id INTEGER NOT NULL,
+  room_id TEXT NOT NULL,
+  device_id TEXT NOT NULL,
   first_seen_at TEXT NOT NULL,
   last_seen_at TEXT NOT NULL,
   PRIMARY KEY (room_id, device_id)
 ) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS device_status (
-  room_id INTEGER NOT NULL,
-  device_id INTEGER NOT NULL,
+  room_id TEXT NOT NULL,
+  device_id TEXT NOT NULL,
   sensor_status TEXT CHECK (sensor_status IN ('alive', 'dead', 'unknown')),
   connection_status TEXT CHECK (connection_status IN ('online', 'offline')),
   PRIMARY KEY (room_id, device_id),
@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS device_status (
 ) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS device_config (
-  room_id INTEGER NOT NULL,
-  device_id INTEGER NOT NULL,
+  room_id TEXT NOT NULL,
+  device_id TEXT NOT NULL,
   hb_interval_ms INTEGER CHECK (hb_interval_ms IS NULL OR hb_interval_ms >= 0),
   sensor_rate_ms INTEGER CHECK (sensor_rate_ms IS NULL OR sensor_rate_ms >= 0),
   PRIMARY KEY (room_id, device_id),

@@ -64,4 +64,10 @@ export const SQLFetch = {
   getAllDeviceIdsForRoom: `
       SELECT device_id FROM devices WHERE room_id = ?;
     `,
+  getAllDevices: `
+      SELECT room_id, device_id FROM devices;
+    `,
+  getAllDeviceStatuses: `
+      SELECT room_id, device_id, sensor_status, connection_status FROM device_status;
+    `,
 };

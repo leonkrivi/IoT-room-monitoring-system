@@ -2,6 +2,8 @@ import express from "express";
 import roomStateRoutes from "#src/routes/roomStateRoutes.js";
 import mqttRoutes from "#src/routes/mqttRoutes.js";
 import { shutdownMqttPipeline } from "#src/mqtt/mqttClient.js";
+import { initWebSocketServer } from "#src/ws/wsServer.js";
+import { hydrateCacheOnStartup } from "#src/utils/hydrateCache.js";
 
 const app = express();
 const PORT = Number(process.env.BACKEND_PORT) || 3000;
@@ -17,8 +19,14 @@ app.use("/api", roomStateRoutes);
 
 app.use("/mqtt", mqttRoutes);
 
-const server = app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+const server = app.listen(PORT, async () => {
+  console.log(`Backend server is running on http://localhost:${PORT}`);
+
+  // hydrate cache from database on startup
+  await hydrateCacheOnStartup();
+
+  // init WebSocket server on the same HTTP server
+  initWebSocketServer(server);
 });
 
 // ==================== Graceful Shutdown Logic ====================
