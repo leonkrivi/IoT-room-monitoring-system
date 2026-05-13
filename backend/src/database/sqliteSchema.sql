@@ -1,5 +1,16 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS user (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  password_hash TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  user_id INTEGER,
+  expires_at DATETIME
+);
+
 CREATE TABLE IF NOT EXISTS devices (
   room_id TEXT NOT NULL,
   device_id TEXT NOT NULL,

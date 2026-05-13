@@ -8,9 +8,11 @@ let influxQueryApi = null;
 let influxEnabled = false;
 
 const influxConfig = {
-  url: process.env.INFLUXDB_URL,
-  org: process.env.INFLUXDB_ORG,
-  token: process.env.INFLUXDB_BACKEND_TOKEN,
+  url: process.env.INFLUXDB_URL || "http://localhost:8086",
+  org: process.env.INFLUXDB_ORG || "iot_final_project",
+  token:
+    process.env.INFLUXDB_BACKEND_TOKEN ||
+    "628be9ef60e6fccb5108405c538fa063b897583748ee0d911c97fc19366cc900",
   bucket: process.env.INFLUXDB_BUCKET || "room_monitoring",
 };
 

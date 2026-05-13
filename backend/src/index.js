@@ -1,9 +1,12 @@
 import express from "express";
+import "dotenv/config";
+
 import roomStateRoutes from "#src/routes/roomStateRoutes.js";
 import mqttRoutes from "#src/routes/mqttRoutes.js";
 import { shutdownMqttPipeline } from "#src/mqtt/mqttClient.js";
 import { initWebSocketServer } from "#src/ws/wsServer.js";
 import { hydrateCacheOnStartup } from "#src/utils/hydrateCache.js";
+import { ensureDefaultUser } from "#src/login/onStartup.js";
 
 const app = express();
 const PORT = Number(process.env.BACKEND_PORT) || 3000;
@@ -24,6 +27,9 @@ const server = app.listen(PORT, async () => {
 
   // hydrate cache from database on startup
   await hydrateCacheOnStartup();
+
+  // ensure default user exists on startup
+  await ensureDefaultUser();
 
   // init WebSocket server on the same HTTP server
   initWebSocketServer(server);

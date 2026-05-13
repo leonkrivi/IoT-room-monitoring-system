@@ -6,7 +6,9 @@ const TAG = "[WebSocket Server]";
 
 export function initWebSocketServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer });
-  const port = httpServer.address() ? httpServer.address().port : process.env.BACKEND_PORT || 3000;
+  const port = httpServer.address()
+    ? httpServer.address().port
+    : process.env.BACKEND_PORT || 3000;
   console.log(TAG, `running on ws://localhost:${port}`);
 
   wss.on("connection", async (ws) => {
