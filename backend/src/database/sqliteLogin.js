@@ -20,6 +20,9 @@ class SqliteLogin {
     this.#stmts.getSessionById = this.#db.prepare(
       "SELECT * FROM sessions WHERE id = ?",
     );
+    this.#stmts.updateSessionExpiration = this.#db.prepare(
+      "UPDATE sessions SET expires_at = ? WHERE id = ?",
+    );
     this.#stmts.deleteSessionById = this.#db.prepare(
       "DELETE FROM sessions WHERE id = ?",
     );
@@ -45,6 +48,10 @@ class SqliteLogin {
 
   async getSessionById(sessionId) {
     return this.#stmts.getSessionById.get(sessionId);
+  }
+
+  async updateSessionExpiration(sessionId, newExpiresAt) {
+    return this.#stmts.updateSessionExpiration.run(newExpiresAt, sessionId);
   }
 
   async deleteSessionById(sessionId) {

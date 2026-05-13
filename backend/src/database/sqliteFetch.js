@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SQLFetch } from "./sqliteQueries.js";
+import { SQLFetch } from "../utils/sqliteQueries.js";
 import sqliteDbInstance from "./sqliteClient.js";
 
 const TAG = "[SQLite Fetch]";

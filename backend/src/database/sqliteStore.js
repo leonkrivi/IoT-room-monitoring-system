@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SQLStore } from "./sqliteQueries.js";
+import { SQLStore } from "../utils/sqliteQueries.js";
 import sqliteDbInstance from "./sqliteClient.js";
 
 const TAG = "[SQLite Store]";
