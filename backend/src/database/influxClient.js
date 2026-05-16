@@ -8,12 +8,10 @@ let influxQueryApi = null;
 let influxEnabled = false;
 
 const influxConfig = {
-  url: process.env.INFLUXDB_URL || "http://localhost:8086",
-  org: process.env.INFLUXDB_ORG || "iot_final_project",
-  token:
-    process.env.INFLUXDB_BACKEND_TOKEN ||
-    "628be9ef60e6fccb5108405c538fa063b897583748ee0d911c97fc19366cc900",
-  bucket: process.env.INFLUXDB_BUCKET || "room_monitoring",
+  url: process.env.INFLUXDB_URL,
+  org: process.env.INFLUXDB_ORG,
+  bucket: process.env.INFLUXDB_BUCKET,
+  token: process.env.INFLUXDB_BACKEND_TOKEN,
 };
 
 if (!influxConfig.org || !influxConfig.token) {
@@ -29,8 +27,9 @@ if (!influxConfig.org || !influxConfig.token) {
       influxConfig.bucket,
       "ms",
       {
-        maxRetries: 2, // two retries if write fails (e.g., if InfluxDB is temporarily unavailable)
-        maxBufferLines: 1000, // buffer up to 1000 points before flushing
+        maxRetries: 2, // retry failed writes up to 2 times
+        // if writes still fail, they are buffered locally and retried in background by the InfluxDB client
+        maxBufferLines: 1000, // buffer for failed writes
       },
     );
     influxQueryApi = influxDB.getQueryApi(influxConfig.org);

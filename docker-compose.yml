@@ -1,32 +1,35 @@
 services:
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
-    image: node:22-bookworm-slim-local
-    container_name: backend
+      context: ./backend
+    image: iot-room-monitor-backend
+    container_name: IoT-RoomMonitor-backend
     depends_on:
       influxdb:
         condition: service_healthy
+      mosquitto:
+        condition: service_started # app has retry logic for MQTT connection
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - 3000:3000
+    volumes:
+      - sqlite-data:/app/data
     environment:
-      INFLUXDB_URL: ${INFLUXDB_URL}
+      BACKEND_PORT: 3000
+      INFLUXDB_URL: http://influxdb:8086
       INFLUXDB_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
       INFLUXDB_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
       INFLUXDB_DATA_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION}
-      INFLUXDB_BACKEND_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN} # TODO (prod): Use a separate backend token with appropriate permissions
 
-      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-mqtt://host.docker.internal:1883} # TODO make MQTT broker a separate service in the same Compose file
+      INFLUXDB_BACKEND_TOKEN: ${INFLUXDB_BACKEND_TOKEN}
+
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
       SQLITE_PATH: /app/data/app.db
-    volumes:
-      - ./data:/app/data # TODO (prod): Use a named volume
 
   influxdb:
     image: influxdb:2.7
-    container_name: influxdb
+    container_name: IoT-RoomMonitor-influxdb
     ports:
-      - "${INFLUXDB_PORT:-8086}:8086"
+      - 8086:8086
     volumes:
       - influxdb-data:/var/lib/influxdb2
     environment:
@@ -41,11 +44,17 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+      start_period: 30s
 
-  # TODO (prod): Switch plaintext init env vars to Compose secrets using:
-  # DOCKER_INFLUXDB_INIT_USERNAME_FILE, DOCKER_INFLUXDB_INIT_PASSWORD_FILE,
-  # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE.
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: IoT-RoomMonitor-mosquitto
+    ports:
+      - 1883:1883
+    volumes:
+      - ./mosquitto:/mosquitto/config/
 
 volumes:
   influxdb-data:
+  sqlite-data:

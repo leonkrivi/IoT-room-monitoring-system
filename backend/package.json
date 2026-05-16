@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon --env-file=../.env src/index.js",
+    "start": "node src/index.js"
   },
   "name": "backend",
   "version": "1.0.0",

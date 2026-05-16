@@ -24,7 +24,7 @@ const { enqueue: enqueueProcessing } = createProcessingQueue({
 
 // ==================== MQTT Client Setup ====================
 
-const client = mqtt.connect(MQTT_BROKER_URL);
+const client = mqtt.connect(MQTT_BROKER_URL); // implicit reconnection enabled by default
 export { client };
 
 client.on("connect", () => {

@@ -1,6 +1,5 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import "dotenv/config";
 
 import routes from "#src/routes/routes.js";
 import { shutdownMqttPipeline } from "#src/mqtt/mqttClient.js";

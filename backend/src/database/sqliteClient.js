@@ -5,11 +5,10 @@ import Database from "better-sqlite3";
 const TAG = "[SQLite Client]";
 
 function initSQLite() {
-  const defaultPath = path.resolve(process.cwd(), "data", "app.db");
-  const sqlitePath = path.resolve(process.env.SQLITE_PATH || defaultPath);
-
   try {
+    const sqlitePath = path.resolve(process.env.SQLITE_PATH);
     const dbDir = path.dirname(sqlitePath);
+
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
