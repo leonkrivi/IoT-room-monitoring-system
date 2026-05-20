@@ -3,7 +3,9 @@ import { influxQueryApi, influxEnabled, influxConfig } from "./influxClient.js";
 
 const TAG = "[Influx Reader]";
 
-const DataRetentionMs = parseDurationToMs(process.env.INFLUXDB_DATA_RETENTION || "720h");
+const DataRetentionMs = parseDurationToMs(
+  process.env.INFLUXDB_DATA_RETENTION || "720h",
+);
 
 export async function dbGetRecentRoomStateHistory(
   roomId,

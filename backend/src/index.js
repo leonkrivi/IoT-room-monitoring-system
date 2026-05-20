@@ -8,7 +8,7 @@ import { hydrateCacheOnStartup } from "#src/utils/hydrateCache.js";
 import { ensureDefaultUser } from "#src/auth/onStartup.js";
 
 const app = express();
-const PORT = Number(process.env.BACKEND_PORT) || 3000;
+const PORT = Number(process.env.BACKEND_PORT);
 
 app.use(express.json());
 app.use(cookieParser());
