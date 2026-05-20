@@ -23,10 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (password: string) => {
     const response = await api.auth.login(password);
-    const passwordChangeRequired =
-      "passwordChangeRequired" in response
-        ? Boolean((response as Record<string, unknown>).passwordChangeRequired)
-        : false;
+    const passwordChangeRequired = Boolean(response.passwordChangeRequired);
     setState({ isAuthenticated: true, passwordChangeRequired });
   }, []);
 

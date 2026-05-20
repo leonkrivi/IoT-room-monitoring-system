@@ -38,7 +38,11 @@ export class ApiError extends Error {
 export const api = {
   auth: {
     login: (password: string) =>
-      request<{ message: string }>("POST", "/auth/login", { password }),
+      request<{ message: string; passwordChangeRequired: boolean }>(
+        "POST",
+        "/auth/login",
+        { password },
+      ),
 
     logout: () => request<{ message: string }>("POST", "/auth/logout"),
 
@@ -46,5 +50,11 @@ export const api = {
       request<{ message: string }>("POST", "/auth/change-password", {
         newPassword,
       }),
+
+    status: () =>
+      request<{ isAuthenticated: boolean; passwordChangeRequired: boolean }>(
+        "GET",
+        "/auth/status",
+      ),
   },
 };

@@ -2,7 +2,8 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS user (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  password_hash TEXT NOT NULL
+  password_hash TEXT NOT NULL,
+  change_password_required BOOLEAN DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS sessions (

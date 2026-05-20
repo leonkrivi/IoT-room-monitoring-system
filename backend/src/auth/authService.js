@@ -28,6 +28,12 @@ class AuthService {
     const newPasswordHash = `${key},${salt},${params}`;
 
     await sqliteLogin.setPasswordHash(newPasswordHash);
+    await sqliteLogin.setPasswordChangeRequired(false);
+  }
+
+  async isPasswordChangeRequired() {
+    const value = await sqliteLogin.getPasswordChangeRequired();
+    return Boolean(value);
   }
 
   // extends session if valid, otherwise deletes it and returns null
