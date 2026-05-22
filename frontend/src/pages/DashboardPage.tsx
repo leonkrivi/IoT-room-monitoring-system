@@ -1,52 +1,51 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LiveBadge } from "@/components/dashboard/LiveBadge";
+import { TopNavBar } from "@/components/dashboard/TopNavBar";
+import { StatusCardsRow } from "@/components/dashboard/StatusCardsRow";
+import { ConfigTable } from "@/components/dashboard/ConfigTable";
+import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
 
 export function DashboardPage() {
   const { logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [device, setDevice] = useState("lr-01");
 
   async function handleLogout() {
     setLoggingOut(true);
     await logout();
   }
 
+  function handleForceCheck() {
+    // TODO: trigger sensor check via API
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-app items-center justify-between px-md py-sm">
-          <span className="headline-sm text-foreground">IoT Room Monitor</span>
-          <Button
-            variant="outline"
-            onClick={() => void handleLogout()}
-            disabled={loggingOut}
-          >
-            {loggingOut ? (
-              <>
-                <Spinner className="mr-2" />
-                Signing out…
-              </>
-            ) : (
-              "Sign out"
-            )}
-          </Button>
-        </div>
-      </header>
+      <TopNavBar
+        device={device}
+        onDeviceChange={setDevice}
+        loggingOut={loggingOut}
+        onLogout={() => void handleLogout()}
+      />
 
-      <main className="mx-auto max-w-app px-md py-xl">
-        <h1 className="display-lg text-foreground mb-sm">Dashboard</h1>
-        <p className="body-md text-muted-foreground">
-          Authentication successful. Dashboard content will appear here.
-        </p>
-
-        <div className="mt-xl rounded-xl border border-border bg-card p-lg">
-          <p className="label-caps text-muted-foreground mb-sm">Status</p>
-          <p className="headline-sm text-foreground">Session active</p>
-          <p className="body-md text-muted-foreground mt-xs">
-            You are logged in. This is a placeholder page.
-          </p>
+      <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
+        {/* Dashboard header */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Dashboard Overview
+          </h1>
+          <LiveBadge />
         </div>
+
+        {/* Row 1 — Status Cards */}
+        <StatusCardsRow onForceCheck={handleForceCheck} />
+
+        {/* Row 2 — Device Configuration */}
+        <ConfigTable />
+
+        {/* Row 3 — Occupancy History Chart */}
+        <OccupancyChart />
       </main>
     </div>
   );
