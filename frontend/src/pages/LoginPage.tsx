@@ -4,6 +4,7 @@ import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -18,7 +19,11 @@ export function LoginPage() {
     try {
       await login(password);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Login failed.");
+      if (err instanceof ApiError && err.status === 401) {
+        setError("Wrong credentials.");
+      } else {
+        setError("Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -58,7 +63,14 @@ export function LoginPage() {
             {error && <p className="body-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Signing in…
+                </>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
         </div>

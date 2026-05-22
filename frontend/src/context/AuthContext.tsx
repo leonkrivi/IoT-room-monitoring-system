@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import type { ReactNode } from "react";
 import { api } from "@/lib/api";
 
@@ -8,6 +14,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
+  isInitializing: boolean;
   login: (password: string) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
@@ -20,6 +27,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
     passwordChangeRequired: false,
   });
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api.auth
+      .status()
+      .then((res) => {
+        if (!cancelled) {
+          setState({
+            isAuthenticated: res.isAuthenticated,
+            passwordChangeRequired: res.passwordChangeRequired,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({ isAuthenticated: false, passwordChangeRequired: false });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsInitializing(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = useCallback(async (password: string) => {
     const response = await api.auth.login(password);
@@ -38,7 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, changePassword }}>
+    <AuthContext.Provider
+      value={{ ...state, isInitializing, login, logout, changePassword }}
+    >
       {children}
     </AuthContext.Provider>
   );

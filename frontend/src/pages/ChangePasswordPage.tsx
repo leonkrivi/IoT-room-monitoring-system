@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 export function ChangePasswordPage() {
   const { changePassword } = useAuth();
@@ -93,7 +94,14 @@ export function ChangePasswordPage() {
             {error && <p className="body-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Updating..." : "Update password"}
+              {loading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Updating...
+                </>
+              ) : (
+                "Update password"
+              )}
             </Button>
           </form>
         </div>
