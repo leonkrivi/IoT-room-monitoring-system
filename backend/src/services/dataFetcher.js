@@ -1,6 +1,6 @@
 import {
-  dbGetRecentRoomStateHistory,
-  dbGetRoomStateHistory,
+  dbGetRoomStateHistoryRecent,
+  dbGetRoomStateHistoryPeriod,
   dbGetLastRoomStateForDevice,
 } from "#src/database/influxRead.js";
 import { sqliteFetch } from "#src/database/sqliteFetch.js";
@@ -25,8 +25,8 @@ export function createDataFetcher() {
   }
 
   return {
-    getRecentRoomStateHistory: dbGetRecentRoomStateHistory,
-    getRoomStateHistory: dbGetRoomStateHistory,
+    getRoomStateHistoryRecent: dbGetRoomStateHistoryRecent,
+    getRoomStateHistoryPeriod: dbGetRoomStateHistoryPeriod,
     getAllLastRoomState: getAllLastRoomState,
     getAllIdPairs: () => sqliteFetch.dbGetAllIdPairs(),
     getAllRoomIds: () => sqliteFetch.dbGetAllRoomIds(),

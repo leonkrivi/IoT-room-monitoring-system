@@ -75,7 +75,7 @@ export const api = {
         : "";
       return request<{ data: RoomStateEntry[] }>(
         "GET",
-        `/room_state/history_recent?roomid=${roomId}&deviceid=${deviceId}${hours}${granularity}`,
+        `/room-state/history_recent?roomid=${roomId}&deviceid=${deviceId}${hours}${granularity}`,
       );
     },
   },

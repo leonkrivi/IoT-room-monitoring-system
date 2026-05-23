@@ -57,8 +57,8 @@ export function DashboardPage() {
 
         {/* Row 3 — Occupancy History Chart */}
         <OccupancyChart
-          device={selected?.deviceId ?? ""}
-          room={selected?.roomId ?? ""}
+          deviceId={selected?.deviceId ?? ""}
+          roomId={selected?.roomId ?? ""}
         />
       </main>
     </div>
