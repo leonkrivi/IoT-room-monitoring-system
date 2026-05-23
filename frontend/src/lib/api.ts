@@ -1,3 +1,5 @@
+import type { RoomStateEntry } from "@/types/RoomStateEntry";
+
 const BASE_URL: string =
   import.meta.env.API_BASE_URL || "http://localhost:3000"; // fallback for dev mode
 type ApiResponse<T> = Promise<T>;
@@ -55,6 +57,34 @@ export const api = {
       request<{ isAuthenticated: boolean; passwordChangeRequired: boolean }>(
         "GET",
         "/auth/status",
+      ),
+  },
+
+  roomState: {
+    getRoomStateRecent: (
+      roomId: string,
+      deviceId: string,
+      hours?: string | number,
+      granularity?: string,
+    ) => {
+      roomId = encodeURIComponent(roomId);
+      deviceId = encodeURIComponent(deviceId);
+      hours = hours ? `&hours=${encodeURIComponent(hours.toString())}` : "";
+      granularity = granularity
+        ? `&granularity=${encodeURIComponent(granularity)}`
+        : "";
+      return request<{ data: RoomStateEntry[] }>(
+        "GET",
+        `/room_state/history_recent?roomid=${roomId}&deviceid=${deviceId}${hours}${granularity}`,
+      );
+    },
+  },
+
+  devices: {
+    list: () =>
+      request<{ data: { deviceId: string; roomId: string }[] }>(
+        "GET",
+        "/devices/list",
       ),
   },
 };

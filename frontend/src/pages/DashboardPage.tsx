@@ -1,30 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 import { TopNavBar } from "@/components/dashboard/TopNavBar";
 import { StatusCardsRow } from "@/components/dashboard/StatusCardsRow";
 import { ConfigTable } from "@/components/dashboard/ConfigTable";
 import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
+import type { IdPair } from "@/types/IdPair";
 
 export function DashboardPage() {
   const { logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [device, setDevice] = useState("lr-01");
+  const [devices, setDevices] = useState<IdPair[]>([]);
+  const [selected, setSelected] = useState<IdPair | null>(null);
+
+  useEffect(() => {
+    api.devices.list().then(({ data }) => {
+      setDevices(data);
+      if (data.length > 0) setSelected(data[0]);
+    });
+  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
     await logout();
   }
 
-  function handleForceCheck() {
+  function handleForceSensorStatusCheck() {
     // TODO: trigger sensor check via API
   }
 
   return (
     <div className="min-h-screen bg-background">
       <TopNavBar
-        device={device}
-        onDeviceChange={setDevice}
+        devices={devices}
+        selected={selected}
+        onSelectionChange={setSelected}
         loggingOut={loggingOut}
         onLogout={() => void handleLogout()}
       />
@@ -39,13 +50,16 @@ export function DashboardPage() {
         </div>
 
         {/* Row 1 — Status Cards */}
-        <StatusCardsRow onForceCheck={handleForceCheck} />
+        <StatusCardsRow onForceCheck={handleForceSensorStatusCheck} />
 
         {/* Row 2 — Device Configuration */}
         <ConfigTable />
 
         {/* Row 3 — Occupancy History Chart */}
-        <OccupancyChart />
+        <OccupancyChart
+          device={selected?.deviceId ?? ""}
+          room={selected?.roomId ?? ""}
+        />
       </main>
     </div>
   );

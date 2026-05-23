@@ -1,19 +1,22 @@
 import { Spinner } from "@/components/ui/spinner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DeviceSelector } from "@/components/dashboard/DeviceSelector";
+import type { IdPair } from "@/types/IdPair";
 
 interface TopNavBarProps {
   title?: string;
-  device: string;
-  onDeviceChange: (value: string) => void;
+  devices: IdPair[];
+  selected: IdPair | null;
+  onSelectionChange: (value: IdPair) => void;
   loggingOut: boolean;
   onLogout: () => void;
 }
 
 export function TopNavBar({
   title = "IoT Room Monitoring System",
-  device,
-  onDeviceChange,
+  devices,
+  selected,
+  onSelectionChange,
   loggingOut,
   onLogout,
 }: TopNavBarProps) {
@@ -25,7 +28,11 @@ export function TopNavBar({
         </span>
 
         <div className="flex justify-center">
-          <DeviceSelector value={device} onValueChange={onDeviceChange} />
+          <DeviceSelector
+            devices={devices}
+            selected={selected}
+            onSelectionChange={onSelectionChange}
+          />
         </div>
 
         <div className="flex items-center justify-end gap-4">

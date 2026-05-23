@@ -1,18 +1,18 @@
-import { useState } from "react"
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { useEffect, useState } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 const MOCK_DATA = [
   { time: "00:00", occupancy: 0 },
@@ -31,32 +31,43 @@ const MOCK_DATA = [
   { time: "09:45", occupancy: 0 },
   { time: "10:30", occupancy: 0 },
   { time: "11:15", occupancy: 50 },
-]
+];
 
 const chartConfig = {
   occupancy: {
     label: "Occupancy %",
     color: "var(--color-foreground)",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 const TIME_RANGE_OPTIONS = [
   { value: "12h", label: "Last 12 hours" },
   { value: "24h", label: "Last 24 hours" },
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
-]
+];
 
 const GRANULARITY_OPTIONS = [
   { value: "1m", label: "1 minute" },
   { value: "5m", label: "5 minutes" },
   { value: "15m", label: "15 minutes" },
   { value: "1h", label: "1 hour" },
-]
+];
 
-export function OccupancyChart() {
-  const [timeRange, setTimeRange] = useState("12h")
-  const [granularity, setGranularity] = useState("5m")
+export function OccupancyChart({
+  device,
+  room,
+}: {
+  device: string;
+  room: string;
+}) {
+  const [timeRange, setTimeRange] = useState("12h");
+  const [granularity, setGranularity] = useState("5m");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+  }, [timeRange, granularity]);
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card">
@@ -143,5 +154,5 @@ export function OccupancyChart() {
         </ChartContainer>
       </div>
     </section>
-  )
+  );
 }
