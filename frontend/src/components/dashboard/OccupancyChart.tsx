@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { RefreshCwIcon } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -37,24 +38,24 @@ const GRANULARITY_OPTIONS = [
   { value: "1d", label: "1 day" },
 ];
 
-type RoomState = "EMPTY" | "OCCUPIED_ACTIVE" | "OCCUPIED_STATIC";
+type RoomState = "EMPTY" | "ACTIVE" | "OCCUPIED_STATIC";
 
 const STATE_HEIGHT: Record<RoomState, number> = {
   EMPTY: 1,
   OCCUPIED_STATIC: 2,
-  OCCUPIED_ACTIVE: 3,
+  ACTIVE: 3,
 };
 
 const STATE_COLOR: Record<RoomState, string> = {
   EMPTY: "var(--color-chart-1)",
   OCCUPIED_STATIC: "var(--color-chart-2)",
-  OCCUPIED_ACTIVE: "var(--color-chart-5)",
+  ACTIVE: "var(--color-chart-5)",
 };
 
 const STATE_LABEL: Record<RoomState, string> = {
   EMPTY: "Empty",
   OCCUPIED_STATIC: "Occupied (static)",
-  OCCUPIED_ACTIVE: "Occupied (active)",
+  ACTIVE: "Active",
 };
 
 const Y_TICKS = [1, 2, 3];
@@ -77,7 +78,7 @@ function formatTime(iso: string, hours: number): string {
 }
 
 function isRoomState(s: string): s is RoomState {
-  return s === "EMPTY" || s === "OCCUPIED_ACTIVE" || s === "OCCUPIED_STATIC";
+  return s === "EMPTY" || s === "ACTIVE" || s === "OCCUPIED_STATIC";
 }
 
 interface ChartPoint {
@@ -193,9 +194,8 @@ export function OccupancyChart({
             </div>
 
             <div className="flex items-center gap-3 border-l border-border pl-3">
-              {(
-                ["EMPTY", "OCCUPIED_STATIC", "OCCUPIED_ACTIVE"] as RoomState[]
-              ).map((s) => (
+              {(["EMPTY", "OCCUPIED_STATIC", "ACTIVE"] as RoomState[]).map(
+                (s) => (
                 <div key={s} className="flex items-center gap-1.5">
                   <span
                     className="size-3 rounded-sm"
@@ -205,7 +205,8 @@ export function OccupancyChart({
                     {STATE_LABEL[s]}
                   </span>
                 </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </div>
