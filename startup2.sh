@@ -1,6 +1,8 @@
 # !/bin/bash
 # script for setting up the environment variable for the backend token and starting the system
 
+# run after you created read/write token for InfluxDB
+
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <backend_token>"
     exit 1

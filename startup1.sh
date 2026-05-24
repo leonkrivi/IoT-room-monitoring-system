@@ -26,5 +26,4 @@ docker compose up -d influxdb
 
 echo "==> Next steps:"
 echo -e "\t1. from the InfluxDB UI get backend token with read/write perissions"
-echo -e "\t2. add it to the .env file. FORMAT: INFLUXDB_BACKEND_TOKEN=<your_token>"
-echo -e "\t3. run 'docker compose up' to start the whole system"
+echo -e "\t2. run `bash startup2.sh <token>`"
