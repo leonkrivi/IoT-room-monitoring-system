@@ -13,6 +13,8 @@ export function DashboardPage() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [devices, setDevices] = useState<IdPair[]>([]);
   const [selected, setSelected] = useState<IdPair | null>(null);
+  const [refreshingDevices, setRefreshingDevices] = useState(false);
+  const [loadingDevice, setLoadingDevice] = useState(false);
 
   useEffect(() => {
     api.devices.list().then(({ data }) => {
@@ -20,6 +22,23 @@ export function DashboardPage() {
       if (data.length > 0) setSelected(data[0]);
     });
   }, []);
+
+  async function handleRefreshDevices() {
+    setRefreshingDevices(true);
+    try {
+      const { data } = await api.devices.list();
+      setDevices(data);
+      if (selected === null && data.length > 0) setSelected(data[0]);
+    } finally {
+      setRefreshingDevices(false);
+    }
+  }
+
+  function handleSelectionChange(value: IdPair) {
+    setLoadingDevice(true);
+    setSelected(value);
+    setTimeout(() => setLoadingDevice(false), 400);
+  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -35,7 +54,9 @@ export function DashboardPage() {
       <TopNavBar
         devices={devices}
         selected={selected}
-        onSelectionChange={setSelected}
+        onSelectionChange={handleSelectionChange}
+        onRefreshDevices={() => void handleRefreshDevices()}
+        refreshingDevices={refreshingDevices}
         loggingOut={loggingOut}
         onLogout={() => void handleLogout()}
       />
@@ -50,15 +71,19 @@ export function DashboardPage() {
         </div>
 
         {/* Row 1 — Status Cards */}
-        <StatusCardsRow onForceCheck={handleForceSensorStatusCheck} />
+        <StatusCardsRow
+          loading={loadingDevice}
+          onForceCheck={handleForceSensorStatusCheck}
+        />
 
         {/* Row 2 — Device Configuration */}
-        <ConfigTable />
+        <ConfigTable loading={loadingDevice} />
 
         {/* Row 3 — Occupancy History Chart */}
         <OccupancyChart
           deviceId={selected?.deviceId ?? ""}
           roomId={selected?.roomId ?? ""}
+          deviceLoading={loadingDevice}
         />
       </main>
     </div>

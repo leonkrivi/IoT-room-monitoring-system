@@ -1,3 +1,4 @@
+import { RefreshCwIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DeviceSelector } from "@/components/dashboard/DeviceSelector";
@@ -8,6 +9,8 @@ interface TopNavBarProps {
   devices: IdPair[];
   selected: IdPair | null;
   onSelectionChange: (value: IdPair) => void;
+  onRefreshDevices: () => void;
+  refreshingDevices?: boolean;
   loggingOut: boolean;
   onLogout: () => void;
 }
@@ -17,6 +20,8 @@ export function TopNavBar({
   devices,
   selected,
   onSelectionChange,
+  onRefreshDevices,
+  refreshingDevices = false,
   loggingOut,
   onLogout,
 }: TopNavBarProps) {
@@ -27,12 +32,24 @@ export function TopNavBar({
           {title}
         </span>
 
-        <div className="flex justify-center">
+        <div className="flex items-center justify-center gap-2">
           <DeviceSelector
             devices={devices}
             selected={selected}
             onSelectionChange={onSelectionChange}
           />
+          <button
+            className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+            onClick={onRefreshDevices}
+            disabled={refreshingDevices}
+            title="Refresh device list"
+          >
+            {refreshingDevices ? (
+              <Spinner className="size-4" />
+            ) : (
+              <RefreshCwIcon className="size-4" />
+            )}
+          </button>
         </div>
 
         <div className="flex items-center justify-end gap-4">

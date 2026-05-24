@@ -110,9 +110,11 @@ function CustomTooltip({
 export function OccupancyChart({
   deviceId,
   roomId,
+  deviceLoading = false,
 }: {
   deviceId: string;
   roomId: string;
+  deviceLoading?: boolean;
 }) {
   const [hours, setHours] = useState(12);
   const [granularity, setGranularity] = useState("15m");
@@ -163,6 +165,18 @@ export function OccupancyChart({
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
+              <button
+                className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                onClick={fetchData}
+                disabled={loading || deviceLoading}
+                title="Refresh chart"
+              >
+                {loading ? (
+                  <Spinner className="size-4" />
+                ) : (
+                  <RefreshCwIcon className="size-4" />
+                )}
+              </button>
               <Select
                 value={String(hours)}
                 onValueChange={(v) => setHours(Number(v))}
@@ -196,15 +210,15 @@ export function OccupancyChart({
             <div className="flex items-center gap-3 border-l border-border pl-3">
               {(["EMPTY", "OCCUPIED_STATIC", "ACTIVE"] as RoomState[]).map(
                 (s) => (
-                <div key={s} className="flex items-center gap-1.5">
-                  <span
-                    className="size-3 rounded-sm"
-                    style={{ backgroundColor: STATE_COLOR[s] }}
-                  />
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {STATE_LABEL[s]}
-                  </span>
-                </div>
+                  <div key={s} className="flex items-center gap-1.5">
+                    <span
+                      className="size-3 rounded-sm"
+                      style={{ backgroundColor: STATE_COLOR[s] }}
+                    />
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                      {STATE_LABEL[s]}
+                    </span>
+                  </div>
                 ),
               )}
             </div>
@@ -213,7 +227,19 @@ export function OccupancyChart({
       </div>
 
       <div className="p-4">
-        {loading ? (
+        {deviceLoading ? (
+          <div className="flex h-64 flex-col gap-3">
+            <div className="flex items-end gap-1 h-full px-2">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="flex-1 rounded-sm"
+                  style={{ height: `${30 + Math.sin(i * 0.8) * 20 + 20}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        ) : loading ? (
           <div className="flex h-64 items-center justify-center">
             <Spinner className="size-5 text-muted-foreground" />
           </div>
@@ -253,7 +279,7 @@ export function OccupancyChart({
                 width={52}
               />
               <ChartTooltip cursor={false} content={<CustomTooltip />} />
-              <Bar dataKey="height" radius={[2, 2, 0, 0]} maxBarSize={24}>
+              <Bar dataKey="height" radius={[4, 4, 4, 4]} maxBarSize={40}>
                 {chartData.map((entry, idx) => (
                   <Cell key={idx} fill={STATE_COLOR[entry.state]} />
                 ))}

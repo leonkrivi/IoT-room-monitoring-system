@@ -1,12 +1,42 @@
-import { DoorOpenIcon, ThermometerIcon, NetworkIcon, RefreshCwIcon } from "lucide-react";
+import {
+  DoorOpenIcon,
+  ThermometerIcon,
+  NetworkIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatusCard } from "@/components/dashboard/StatusCard";
 
 interface StatusCardsRowProps {
+  loading?: boolean;
   onForceCheck?: () => void;
 }
 
-export function StatusCardsRow({ onForceCheck }: StatusCardsRowProps) {
+export function StatusCardsRow({
+  loading = false,
+  onForceCheck,
+}: StatusCardsRowProps) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="overflow-hidden rounded-lg border border-border bg-card p-4"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="size-5 rounded-md" />
+            </div>
+            <Skeleton className="mb-3 h-7 w-20" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {/* Room State */}

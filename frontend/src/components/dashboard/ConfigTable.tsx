@@ -3,6 +3,7 @@ import { PencilIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -53,7 +54,11 @@ const STATUS_STYLES: Record<ParamStatus, string> = {
     "rounded-sm bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
-export function ConfigTable() {
+interface ConfigTableProps {
+  loading?: boolean;
+}
+
+export function ConfigTable({ loading = false }: ConfigTableProps) {
   const [editRow, setEditRow] = useState<ConfigRow | null>(null);
 
   return (
@@ -84,37 +89,59 @@ export function ConfigTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {MOCK_PARAMS.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell className="font-medium text-foreground">
-                  {row.parameter}
-                </TableCell>
-                <TableCell className="font-mono text-sm">{row.value}</TableCell>
-                <TableCell>
-                  <Badge
-                    className={cn(
-                      "text-[11px] font-bold uppercase tracking-widest",
-                      STATUS_STYLES[row.status],
-                    )}
-                  >
-                    {row.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {row.lastUpdated}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="secondary"
-                    size="default"
-                    onClick={() => setEditRow(row)}
-                  >
-                    <PencilIcon className="size-3.5" />
-                    edit
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {loading
+              ? [0, 1, 2].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-36" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16 rounded-sm" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="ml-auto h-8 w-14 rounded-md" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : MOCK_PARAMS.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium text-foreground">
+                      {row.parameter}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {row.value}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={cn(
+                          "text-[11px] font-bold uppercase tracking-widest",
+                          STATUS_STYLES[row.status],
+                        )}
+                      >
+                        {row.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {row.lastUpdated}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="secondary"
+                        size="default"
+                        onClick={() => setEditRow(row)}
+                      >
+                        <PencilIcon className="size-3.5" />
+                        edit
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
           </TableBody>
         </Table>
       </section>
