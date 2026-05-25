@@ -11,6 +11,13 @@ const initialStateSchema = z.object({
       roomState: roomStateSchema.nullable(),
       sensorStatus: sensorStatusSchema.nullable(),
       connection: connectionStatusSchema.nullable(),
+      config: z
+        .object({
+          hbIntervalMs: z.number().nullable(),
+          sensorRateMs: z.number().nullable(),
+        })
+        .nullable()
+        .optional(),
     }),
   ),
 });
@@ -42,16 +49,30 @@ const sensorUpdateSchema = z.object({
   }),
 });
 
+const deviceConfigUpdateSchema = z.object({
+  type: z.literal("device_config_update"),
+  data: z.object({
+    roomId: z.string(),
+    deviceId: z.string(),
+    hbIntervalMs: z.number().nullable().optional(),
+    sensorRateMs: z.number().nullable().optional(),
+  }),
+});
+
 const wsMessageSchema = z.discriminatedUnion("type", [
   initialStateSchema,
   roomStateUpdateSchema,
   connectionUpdateSchema,
   sensorUpdateSchema,
+  deviceConfigUpdateSchema,
 ]);
 
 export type SensorStatus = z.infer<typeof sensorStatusSchema>;
 export type ConnectionStatus = z.infer<typeof connectionStatusSchema>;
 export type WsMessage = z.infer<typeof wsMessageSchema>;
+export type DeviceConfigUpdate = z.infer<
+  typeof deviceConfigUpdateSchema
+>["data"];
 
 export function safeParseWsMessage(input: unknown): WsMessage | null {
   const parsed = wsMessageSchema.safeParse(input);

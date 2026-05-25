@@ -1,9 +1,8 @@
-import { useState } from "react";
-import { PencilIcon } from "lucide-react";
+import type { ConfigParamView, ParamStatus } from "@/hooks/useLiveConfig";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfigPresetPopover } from "./ConfigPresetPopover";
 import {
   Table,
   TableBody,
@@ -12,38 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EditConfigDialog, type ConfigRow } from "./EditConfigDialog";
-
-type ParamStatus = "applied" | "pending" | "rejected";
-
-interface ConfigParam extends ConfigRow {
-  status: ParamStatus;
-  lastUpdated: string;
-}
-
-const MOCK_PARAMS: ConfigParam[] = [
-  {
-    id: "0x4A2",
-    parameter: "Sensor rate",
-    value: "0.8",
-    status: "applied",
-    lastUpdated: "Oct 26, 14:20",
-  },
-  {
-    id: "0x8F1",
-    parameter: "Sensor heartbeat interval",
-    value: "500ms",
-    status: "pending",
-    lastUpdated: "Oct 27, 10:44",
-  },
-  {
-    id: "0x3C9",
-    parameter: "Oversampling Rate",
-    value: "4x",
-    status: "rejected",
-    lastUpdated: "Oct 25, 09:12",
-  },
-];
 
 const STATUS_STYLES: Record<ParamStatus, string> = {
   applied:
@@ -56,11 +23,15 @@ const STATUS_STYLES: Record<ParamStatus, string> = {
 
 interface ConfigTableProps {
   loading?: boolean;
+  rows?: ConfigParamView[];
+  onRequestChange?: (id: string, valueMs: number) => void;
 }
 
-export function ConfigTable({ loading = false }: ConfigTableProps) {
-  const [editRow, setEditRow] = useState<ConfigRow | null>(null);
-
+export function ConfigTable({
+  loading = false,
+  rows = [],
+  onRequestChange,
+}: ConfigTableProps) {
   return (
     <>
       <section className="overflow-hidden rounded-lg border border-border bg-card">
@@ -78,6 +49,9 @@ export function ConfigTable({ loading = false }: ConfigTableProps) {
               </TableHead>
               <TableHead className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                 Value
+              </TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                Requested Value
               </TableHead>
               <TableHead className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                 Status
@@ -99,6 +73,9 @@ export function ConfigTable({ loading = false }: ConfigTableProps) {
                       <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-5 w-16 rounded-sm" />
                     </TableCell>
                     <TableCell>
@@ -109,13 +86,16 @@ export function ConfigTable({ loading = false }: ConfigTableProps) {
                     </TableCell>
                   </TableRow>
                 ))
-              : MOCK_PARAMS.map((row) => (
+              : rows.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell className="font-medium text-foreground">
                       {row.parameter}
                     </TableCell>
                     <TableCell className="font-mono text-sm">
                       {row.value}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">
+                      {row.requestedValue}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -131,26 +111,16 @@ export function ConfigTable({ loading = false }: ConfigTableProps) {
                       {row.lastUpdated}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="secondary"
-                        size="default"
-                        onClick={() => setEditRow(row)}
-                      >
-                        <PencilIcon className="size-3.5" />
-                        edit
-                      </Button>
+                      <ConfigPresetPopover
+                        paramId={row.id}
+                        onSelect={(ms) => onRequestChange?.(row.id, ms)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
           </TableBody>
         </Table>
       </section>
-
-      <EditConfigDialog
-        open={editRow !== null}
-        onOpenChange={(open) => !open && setEditRow(null)}
-        row={editRow}
-      />
     </>
   );
 }

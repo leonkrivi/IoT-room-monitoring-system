@@ -111,6 +111,10 @@ function applyMessage(
         },
       };
     }
+    case "device_config_update":
+      return current;
+    default:
+      return current;
   }
 }
 

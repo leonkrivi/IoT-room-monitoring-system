@@ -97,5 +97,22 @@ export const api = {
         "POST",
         `/mqtt/publish/check_sensor?roomId=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}`,
       ),
+    publishConfiguration: (
+      roomId: string,
+      deviceId: string,
+      configParams: { hb_rate?: number; sensor_rate?: number },
+    ) => {
+      const { hb_rate, sensor_rate } = configParams;
+      const hb_rate_q =
+        hb_rate !== undefined ? `&hb_rate=${encodeURIComponent(hb_rate)}` : "";
+      const sensor_rate_q =
+        sensor_rate !== undefined
+          ? `&sensor_rate=${encodeURIComponent(sensor_rate)}`
+          : "";
+      return request<{ ok: boolean }>(
+        "POST",
+        `/mqtt/publish/configuration?roomId=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}${hb_rate_q}${sensor_rate_q}`,
+      );
+    },
   },
 };

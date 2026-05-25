@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import type { RoomStateEntry } from "@/types/RoomStateEntry";
 
 // Must match backend ALLOWED_HOURS and ALLOWED_GRANULARITIES in constants.js
+// TODO: fetch from backend (e.g. GET /room-state/query-presets) to avoid duplication
 const HOURS_OPTIONS = [
   { value: 1, label: "Last 1 hour" },
   { value: 3, label: "Last 3 hours" },
@@ -196,7 +197,7 @@ export function OccupancyChart({
               </Select>
 
               <Select value={granularity} onValueChange={setGranularity}>
-                <SelectTrigger size="sm" className="w-28">
+                <SelectTrigger size="sm" className="w-36">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

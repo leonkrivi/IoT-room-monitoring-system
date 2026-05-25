@@ -31,5 +31,6 @@ export function createDataFetcher() {
     getAllIdPairs: () => sqliteFetch.dbGetAllIdPairs(),
     getAllRoomIds: () => sqliteFetch.dbGetAllRoomIds(),
     getAllDeviceStatuses: () => sqliteFetch.dbGetAllDeviceStatuses(),
+    getAllDeviceConfigs: () => sqliteFetch.dbGetAllDeviceConfigs(),
   };
 }

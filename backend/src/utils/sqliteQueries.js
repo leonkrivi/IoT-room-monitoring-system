@@ -70,4 +70,7 @@ export const SQLFetch = {
   getAllDeviceStatuses: `
       SELECT room_id, device_id, sensor_status, connection_status FROM device_status;
     `,
+  getAllDeviceConfigs: `
+      SELECT room_id, device_id, hb_interval_ms, sensor_rate_ms FROM device_config;
+    `,
 };

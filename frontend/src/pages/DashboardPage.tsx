@@ -8,6 +8,7 @@ import { ConfigTable } from "@/components/dashboard/ConfigTable";
 import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
 import type { IdPair } from "@/types/IdPair";
 import { useLiveStatus } from "@/hooks/useLiveStatus";
+import { useLiveConfig } from "@/hooks/useLiveConfig";
 
 export function DashboardPage() {
   const { logout } = useAuth();
@@ -17,6 +18,7 @@ export function DashboardPage() {
   const [refreshingDevices, setRefreshingDevices] = useState(false);
   const [loadingDevice, setLoadingDevice] = useState(false);
   const liveStatus = useLiveStatus(selected);
+  const { rows: configRows, requestConfigChange } = useLiveConfig(selected);
 
   useEffect(() => {
     api.devices.list().then(({ data }) => {
@@ -39,7 +41,7 @@ export function DashboardPage() {
   function handleSelectionChange(value: IdPair) {
     setLoadingDevice(true);
     setSelected(value);
-    setTimeout(() => setLoadingDevice(false), 400);
+    setTimeout(() => setLoadingDevice(false), 500);
   }
 
   async function handleLogout() {
@@ -50,6 +52,29 @@ export function DashboardPage() {
   async function handleForceSensorStatusCheck() {
     if (!selected) return;
     await api.mqtt.checkSensor(selected.roomId, selected.deviceId);
+  }
+
+  async function handleConfigRequest(paramId: string, valueMs: number) {
+    if (!selected) return;
+
+    if (paramId === "hb-interval") {
+      requestConfigChange(selected.roomId, selected.deviceId, {
+        hbIntervalMs: valueMs,
+      });
+      await api.mqtt.publishConfiguration(selected.roomId, selected.deviceId, {
+        hb_rate: valueMs,
+      });
+      return;
+    }
+
+    if (paramId === "sensor-rate") {
+      requestConfigChange(selected.roomId, selected.deviceId, {
+        sensorRateMs: valueMs,
+      });
+      await api.mqtt.publishConfiguration(selected.roomId, selected.deviceId, {
+        sensor_rate: valueMs,
+      });
+    }
   }
 
   return (
@@ -81,7 +106,13 @@ export function DashboardPage() {
         />
 
         {/* Row 2 — Device Configuration */}
-        <ConfigTable loading={loadingDevice} />
+        <ConfigTable
+          loading={loadingDevice}
+          rows={configRows}
+          onRequestChange={(id, valueMs) =>
+            void handleConfigRequest(id, valueMs)
+          }
+        />
 
         {/* Row 3 — Occupancy History Chart */}
         <OccupancyChart

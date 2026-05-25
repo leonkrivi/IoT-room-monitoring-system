@@ -18,10 +18,12 @@ function getInitialStatePerDevice(roomId, deviceId) {
   const roomState = deviceCache.getOrInitDeviceRoomState(roomId, deviceId);
   const sensorStatus = deviceCache.getOrInitSensorStatus(roomId, deviceId);
   const connection = deviceCache.getOrInitDeviceConnection(roomId, deviceId);
+  const config = deviceCache.getOrInitDeviceConfig(roomId, deviceId);
 
   return {
     roomState,
     sensorStatus,
     connection,
+    config,
   };
 }
