@@ -13,23 +13,23 @@ export type StatusIndicator =
 
 export interface StatusCardProps {
   label: string;
-  Icon: LucideIcon;
+  Icon?: LucideIcon;
+  headerAction?: React.ReactNode;
   mainValue: React.ReactNode;
   statusIndicator?: StatusIndicator;
   footerLeft: string;
-  footerRight?: string;
-  action?: React.ReactNode;
+  footerRight: string;
   children?: React.ReactNode;
 }
 
 export function StatusCard({
   label,
   Icon,
+  headerAction,
   mainValue,
   statusIndicator,
   footerLeft,
   footerRight,
-  action,
   children,
 }: StatusCardProps) {
   return (
@@ -39,7 +39,8 @@ export function StatusCard({
           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             {label}
           </span>
-          <Icon className="size-4 text-muted-foreground" />
+          {headerAction ??
+            (Icon && <Icon className="size-4 text-muted-foreground" />)}
         </div>
       </CardHeader>
 
@@ -92,7 +93,7 @@ export function StatusCard({
 
       <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
         <span>{footerLeft}</span>
-        {action ?? <span className="font-mono">{footerRight}</span>}
+        <span className="font-mono">{footerRight}</span>
       </div>
     </Card>
   );

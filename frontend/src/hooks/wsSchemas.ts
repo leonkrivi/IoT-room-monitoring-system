@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const sensorStatusSchema = z.enum(["alive", "offline", "unknown"]);
+const sensorStatusSchema = z.enum(["alive", "dead", "unknown"]);
 const connectionStatusSchema = z.enum(["online", "offline"]);
 const roomStateSchema = z.string().min(1);
 

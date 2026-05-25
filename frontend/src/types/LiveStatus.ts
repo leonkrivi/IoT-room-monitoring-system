@@ -13,12 +13,12 @@ export type LiveStatusView = {
     label: string;
     indicatorColor: IndicatorColor;
     indicatorLabel: string;
-    lastSeen: string;
+    lastHeartbeat: string;
   };
   connection: {
     ws: { label: string; color: IndicatorColor };
     device: { label: string; color: IndicatorColor };
-    heartbeat: string;
+    lastUpdate: string;
   };
 };
 

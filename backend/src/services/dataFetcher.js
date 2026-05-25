@@ -12,11 +12,11 @@ export function createDataFetcher() {
     try {
       const ids = await sqliteFetch.dbGetAllIdPairs();
 
-      const results = [];
-      for (const { roomId, deviceId } of ids) {
-        const key = `${roomId}::${deviceId}`;
-        results.push(await dbGetLastRoomStateForDevice(roomId, deviceId));
-      }
+      const results = await Promise.all(
+        ids.map(({ roomId, deviceId }) =>
+          dbGetLastRoomStateForDevice(roomId, deviceId),
+        ),
+      );
       return results;
     } catch (err) {
       console.error(TAG, "Error fetching last room states:", err.message);

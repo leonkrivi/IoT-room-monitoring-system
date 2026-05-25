@@ -142,9 +142,9 @@ function mapSensorStatus(status?: SensorStatus) {
   }
 
   return {
-    label: "Offline",
+    label: "Check sensor",
     indicatorColor: "red" as IndicatorColor,
-    indicatorLabel: "Offline",
+    indicatorLabel: "Problem",
   };
 }
 
@@ -229,7 +229,7 @@ export function useLiveStatus(selected: IdPair | null): LiveStatusView {
         label: sensorView.label,
         indicatorColor: sensorView.indicatorColor,
         indicatorLabel: sensorView.indicatorLabel,
-        lastSeen: formatTimestamp(status?.lastSensorUpdate),
+        lastHeartbeat: formatRelative(status?.lastSensorUpdate, now),
       },
       connection: {
         ws: {
@@ -240,7 +240,7 @@ export function useLiveStatus(selected: IdPair | null): LiveStatusView {
           label: connectionView.label,
           color: connectionView.color,
         },
-        heartbeat: formatRelative(lastMessageAt, now),
+        lastUpdate: formatTimestamp(lastMessageAt),
       },
     };
   }, [selected, statusMap, wsConnected, lastMessageAt, now]);
