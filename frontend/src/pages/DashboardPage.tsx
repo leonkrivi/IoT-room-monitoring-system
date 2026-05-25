@@ -47,8 +47,9 @@ export function DashboardPage() {
     await logout();
   }
 
-  function handleForceSensorStatusCheck() {
-    // TODO: trigger sensor check via API
+  async function handleForceSensorStatusCheck() {
+    if (!selected) return;
+    await api.mqtt.checkSensor(selected.roomId, selected.deviceId);
   }
 
   return (
@@ -75,7 +76,7 @@ export function DashboardPage() {
         {/* Row 1 — Status Cards */}
         <StatusCardsRow
           loading={loadingDevice}
-          onForceCheck={handleForceSensorStatusCheck}
+          onForceCheck={() => void handleForceSensorStatusCheck()}
           liveStatus={liveStatus}
         />
 

@@ -28,18 +28,20 @@ router.post(
   },
 );
 
-router.post(
-  "/publish/sensor/status_check/room/:roomId/device/:deviceId",
-  async (req, res) => {
-    try {
-      const { roomId, deviceId } = req.params;
+router.post("/publish/check_sensor", async (req, res) => {
+  try {
+    const { roomId, deviceId } = req.query;
 
-      await publishCheckSensorMessage(roomId, deviceId);
-      res.json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ ok: false, error: err.message });
-    }
-  },
-);
+    if (!roomId || !deviceId)
+      return res
+        .status(400)
+        .json({ ok: false, error: "roomId and deviceId are required" });
+
+    await publishCheckSensorMessage(roomId, deviceId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 export default router;

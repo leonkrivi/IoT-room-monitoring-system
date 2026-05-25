@@ -90,4 +90,12 @@ export const api = {
         "/devices/list",
       ),
   },
+
+  mqtt: {
+    checkSensor: (roomId: string, deviceId: string) =>
+      request<{ ok: boolean }>(
+        "POST",
+        `/mqtt/publish/check_sensor?roomId=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}`,
+      ),
+  },
 };
