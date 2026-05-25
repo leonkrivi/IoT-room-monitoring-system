@@ -7,6 +7,7 @@ import { StatusCardsRow } from "@/components/dashboard/StatusCardsRow";
 import { ConfigTable } from "@/components/dashboard/ConfigTable";
 import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
 import type { IdPair } from "@/types/IdPair";
+import { useLiveStatus } from "@/hooks/useLiveStatus";
 
 export function DashboardPage() {
   const { logout } = useAuth();
@@ -15,6 +16,7 @@ export function DashboardPage() {
   const [selected, setSelected] = useState<IdPair | null>(null);
   const [refreshingDevices, setRefreshingDevices] = useState(false);
   const [loadingDevice, setLoadingDevice] = useState(false);
+  const liveStatus = useLiveStatus(selected);
 
   useEffect(() => {
     api.devices.list().then(({ data }) => {
@@ -74,6 +76,7 @@ export function DashboardPage() {
         <StatusCardsRow
           loading={loadingDevice}
           onForceCheck={handleForceSensorStatusCheck}
+          liveStatus={liveStatus}
         />
 
         {/* Row 2 — Device Configuration */}

@@ -38,24 +38,24 @@ const GRANULARITY_OPTIONS = [
   { value: "1d", label: "1 day" },
 ];
 
-type RoomState = "EMPTY" | "ACTIVE" | "OCCUPIED_STATIC";
+type RoomState = "UNOCCUPIED" | "OCCUPIED_STATIC" | "OCCUPIED_ACTIVE";
 
 const STATE_HEIGHT: Record<RoomState, number> = {
-  EMPTY: 1,
+  UNOCCUPIED: 1,
   OCCUPIED_STATIC: 2,
-  ACTIVE: 3,
+  OCCUPIED_ACTIVE: 3,
 };
 
 const STATE_COLOR: Record<RoomState, string> = {
-  EMPTY: "var(--color-chart-1)",
+  UNOCCUPIED: "var(--color-chart-1)",
   OCCUPIED_STATIC: "var(--color-chart-2)",
-  ACTIVE: "var(--color-chart-5)",
+  OCCUPIED_ACTIVE: "var(--color-chart-5)",
 };
 
 const STATE_LABEL: Record<RoomState, string> = {
-  EMPTY: "Empty",
-  OCCUPIED_STATIC: "Occupied (static)",
-  ACTIVE: "Active",
+  UNOCCUPIED: "Unoccupied",
+  OCCUPIED_STATIC: "Occupied_static",
+  OCCUPIED_ACTIVE: "Occupied_active",
 };
 
 const Y_TICKS = [1, 2, 3];
@@ -78,7 +78,9 @@ function formatTime(iso: string, hours: number): string {
 }
 
 function isRoomState(s: string): s is RoomState {
-  return s === "EMPTY" || s === "ACTIVE" || s === "OCCUPIED_STATIC";
+  return (
+    s === "UNOCCUPIED" || s === "OCCUPIED_STATIC" || s === "OCCUPIED_ACTIVE"
+  );
 }
 
 interface ChartPoint {
@@ -208,19 +210,23 @@ export function OccupancyChart({
             </div>
 
             <div className="flex items-center gap-3 border-l border-border pl-3">
-              {(["EMPTY", "OCCUPIED_STATIC", "ACTIVE"] as RoomState[]).map(
-                (s) => (
-                  <div key={s} className="flex items-center gap-1.5">
-                    <span
-                      className="size-3 rounded-sm"
-                      style={{ backgroundColor: STATE_COLOR[s] }}
-                    />
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                      {STATE_LABEL[s]}
-                    </span>
-                  </div>
-                ),
-              )}
+              {(
+                [
+                  "UNOCCUPIED",
+                  "OCCUPIED_STATIC",
+                  "OCCUPIED_ACTIVE",
+                ] as RoomState[]
+              ).map((s) => (
+                <div key={s} className="flex items-center gap-1.5">
+                  <span
+                    className="size-3 rounded-sm"
+                    style={{ backgroundColor: STATE_COLOR[s] }}
+                  />
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {STATE_LABEL[s]}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

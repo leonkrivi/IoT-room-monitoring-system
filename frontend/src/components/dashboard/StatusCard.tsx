@@ -5,7 +5,11 @@ import { Badge } from "@/components/ui/badge";
 
 export type StatusIndicator =
   | { type: "badge"; text: string; className?: string }
-  | { type: "dot"; color: "green" | "yellow" | "red"; label: string };
+  | {
+      type: "dot";
+      color: "green" | "yellow" | "red" | "gray";
+      label: string;
+    };
 
 export interface StatusCardProps {
   label: string;
@@ -58,6 +62,7 @@ export function StatusCard({
                 "bg-green-500": statusIndicator.color === "green",
                 "bg-yellow-500": statusIndicator.color === "yellow",
                 "bg-red-500": statusIndicator.color === "red",
+                "bg-slate-400": statusIndicator.color === "gray",
               })}
             />
             <span
@@ -68,6 +73,7 @@ export function StatusCard({
                   statusIndicator.color === "yellow",
                 "text-red-700 dark:text-red-400":
                   statusIndicator.color === "red",
+                "text-muted-foreground": statusIndicator.color === "gray",
               })}
             >
               {statusIndicator.label}

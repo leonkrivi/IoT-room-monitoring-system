@@ -1,7 +1,10 @@
 import type { RoomStateEntry } from "@/types/RoomStateEntry";
 
-const BASE_URL: string =
-  import.meta.env.API_BASE_URL || "http://localhost:3000"; // fallback for dev mode
+const API_BASE = (import.meta.env.VITE_API_BASE ?? "localhost:3000")
+  .replace(/^\w+:\/\//, "")
+  .trim();
+const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+const BASE_URL = `${protocol}//${API_BASE}`;
 type ApiResponse<T> = Promise<T>;
 
 async function request<T>(

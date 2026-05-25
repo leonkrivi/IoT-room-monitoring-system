@@ -1,13 +1,13 @@
 export const ROOM_STATES = {
-  EMPTY: "EMPTY",
+  UNOCCUPIED: "UNOCCUPIED",
   OCCUPIED_STATIC: "OCCUPIED_STATIC",
-  ACTIVE: "ACTIVE",
+  OCCUPIED_ACTIVE: "OCCUPIED_ACTIVE",
 };
 
 export function deriveRoomState({ presence, motion }) {
-  if (presence === 0 && motion === 0) return ROOM_STATES.EMPTY;
+  if (presence === 0 && motion === 0) return ROOM_STATES.UNOCCUPIED;
   if (presence === 1 && motion === 1) return ROOM_STATES.OCCUPIED_STATIC;
-  if (presence === 1 && motion === 2) return ROOM_STATES.ACTIVE;
+  if (presence === 1 && motion === 2) return ROOM_STATES.OCCUPIED_ACTIVE;
 
   throw new Error(
     `forbidden state combination: presence=${presence}, motion=${motion}`,
