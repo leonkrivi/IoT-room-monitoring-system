@@ -68,7 +68,9 @@ function deriveStatus(
 
 function formatTimestamp(ts: number | null): string {
   if (!ts) return "—";
-  return new Date(ts).toLocaleString();
+  return new Date(ts).toLocaleString(undefined, {
+    timeZoneName: "short",
+  });
 }
 
 export interface UseLiveConfigResult {

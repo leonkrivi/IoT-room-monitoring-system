@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { IdPair } from "@/types/IdPair";
-import { buildKey } from "@/lib/utils";
+import { buildKey, getLocalTimeZone } from "@/lib/utils";
 import { useWebSocket } from "@/context/WebSocketContext";
 import type {
   ConnectionStatus,
@@ -35,10 +35,14 @@ const ROOM_STATE_MAP: Record<string, { label: string; badgeClass: string }> = {
 };
 
 const UNKNOWN_LABEL = "Unknown";
+const LOCAL_TIME_ZONE = getLocalTimeZone();
 
 function formatTimestamp(timestamp?: number): string {
   if (!timestamp) return UNKNOWN_LABEL;
-  return new Date(timestamp).toLocaleString();
+  return new Date(timestamp).toLocaleString(undefined, {
+    timeZone: LOCAL_TIME_ZONE,
+    timeZoneName: "short",
+  });
 }
 
 function formatRelative(timestamp?: number, now = Date.now()): string {

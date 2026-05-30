@@ -8,3 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function buildKey(roomId: string, deviceId: string): string {
   return `${roomId}::${deviceId}`;
 }
+
+export function getLocalTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC";
+}

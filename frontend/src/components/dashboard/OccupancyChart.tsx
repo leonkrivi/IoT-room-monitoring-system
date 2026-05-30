@@ -16,6 +16,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { getLocalTimeZone } from "@/lib/utils";
 import type { RoomStateEntry } from "@/types/RoomStateEntry";
 
 // Must match backend ALLOWED_HOURS and ALLOWED_GRANULARITIES in constants.js
@@ -66,16 +67,35 @@ const Y_TICK_LABELS: Record<number, string> = {
   3: "Active",
 };
 
+const LOCAL_TIME_ZONE = getLocalTimeZone();
+
 const chartConfig = {
   state: { label: "Room State" },
 } satisfies ChartConfig;
 
-function formatTime(iso: string, hours: number): string {
+function formatTime(iso: string, granularity: string): string {
   const d = new Date(iso);
-  if (hours <= 48) {
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (granularity === "1d") {
+    return d.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      timeZone: LOCAL_TIME_ZONE,
+    });
   }
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+
+  const dateStr = d.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    timeZone: LOCAL_TIME_ZONE,
+  });
+
+  const timeStr = d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: LOCAL_TIME_ZONE,
+  });
+
+  return `${dateStr}, ${timeStr}`;
 }
 
 function isRoomState(s: string): s is RoomState {
@@ -104,7 +124,9 @@ function CustomTooltip({
     <div className="rounded-md border border-border bg-card px-3 py-2 text-xs shadow-md">
       <p className="font-semibold text-foreground">{STATE_LABEL[d.state]}</p>
       <p className="text-muted-foreground">
-        {new Date(d.rawTime).toLocaleString()}
+        {new Date(d.rawTime).toLocaleString(undefined, {
+          timeZone: LOCAL_TIME_ZONE,
+        })}
       </p>
     </div>
   );
@@ -136,7 +158,7 @@ export function OccupancyChart({
           .filter((e) => isRoomState(e.roomState))
           .map((e) => ({
             rawTime: e.time,
-            time: formatTime(e.time, hours),
+            time: formatTime(e.time, granularity),
             height: STATE_HEIGHT[e.roomState as RoomState],
             state: e.roomState as RoomState,
           }));
