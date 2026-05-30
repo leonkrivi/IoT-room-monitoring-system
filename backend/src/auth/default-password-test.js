@@ -3,7 +3,7 @@ import { sqliteLogin } from "#src/database/sqliteLogin.js";
 
 console.log("Testing default password...");
 
-const defaultPassword = process.env.DEFAULT_PASSWORD || "admin123";
+const defaultPassword = process.env.DEFAULT_USER_PASSWORD;
 
 const storedPasswordHash = await sqliteLogin.getPasswordHash();
 
