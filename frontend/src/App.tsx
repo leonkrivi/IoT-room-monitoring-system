@@ -1,11 +1,14 @@
 import { RouterProvider } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { WebSocketProvider } from "@/context/WebSocketContext";
 import { router } from "@/routes";
 
 export function App() {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <WebSocketProvider>
+        <RouterProvider router={router} />
+      </WebSocketProvider>
     </AuthProvider>
   );
 }

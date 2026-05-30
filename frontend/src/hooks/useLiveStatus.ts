@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { IdPair } from "@/types/IdPair";
 import { buildKey } from "@/lib/utils";
-import { createWebSocket } from "@/lib/websocket";
-import {
-  safeParseWsMessage,
-  type ConnectionStatus,
-  type SensorStatus,
-  type WsMessage,
+import { useWebSocket } from "@/context/WebSocketContext";
+import type {
+  ConnectionStatus,
+  SensorStatus,
+  WsMessage,
 } from "@/hooks/wsSchemas";
 import type {
   IndicatorColor,
@@ -165,48 +164,17 @@ function mapConnectionStatus(status?: ConnectionStatus) {
 }
 
 export function useLiveStatus(selected: IdPair | null): LiveStatusView {
+  const { isConnected: wsConnected, subscribe, lastMessageAt } = useWebSocket();
   const [statusMap, setStatusMap] = useState<StatusMap>({});
-  const [wsConnected, setWsConnected] = useState(false);
-  const [lastMessageAt, setLastMessageAt] = useState<number | undefined>(
-    undefined,
-  );
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const socket = createWebSocket();
-    let isActive = true;
-
-    socket.onopen = () => {
-      if (!isActive) return;
-      setWsConnected(true);
-    };
-
-    socket.onmessage = (event) => {
-      if (!isActive) return;
-      let payload: unknown;
-      try {
-        payload = JSON.parse(event.data as string);
-      } catch {
-        return;
-      }
-      const message = safeParseWsMessage(payload);
-      if (!message) return;
-
-      const timestamp = Date.now();
-      setLastMessageAt(timestamp);
+    const unsubscribe = subscribe((message, timestamp) => {
       setStatusMap((current) => applyMessage(current, message, timestamp));
-    };
+    });
 
-    socket.onclose = () => {
-      if (!isActive) return;
-      setWsConnected(false);
-    };
-
-    return () => {
-      isActive = false;
-      socket.close();
-    };
-  }, []);
+    return unsubscribe;
+  }, [subscribe]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(Date.now()), 10000);

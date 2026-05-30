@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { IdPair } from "@/types/IdPair";
 import { buildKey } from "@/lib/utils";
-import { createWebSocket } from "@/lib/websocket";
-import { safeParseWsMessage } from "@/hooks/wsSchemas";
+import { useWebSocket } from "@/context/WebSocketContext";
 
 const REJECTION_TIMEOUT_MS = 30_000; // fallback when current interval is unknown
 const REJECTION_OFFSET_MS = 2_000;
@@ -82,6 +81,7 @@ export interface UseLiveConfigResult {
 }
 
 export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
+  const { subscribe } = useWebSocket();
   const [configMap, setConfigMap] = useState<ConfigMap>({});
   const [now, setNow] = useState(() => Date.now());
   const rejectionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -89,22 +89,7 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
   );
 
   useEffect(() => {
-    const socket = createWebSocket();
-    let isActive = true;
-
-    socket.onmessage = (event) => {
-      if (!isActive) return;
-      let payload: unknown;
-      try {
-        payload = JSON.parse(event.data as string);
-      } catch {
-        return;
-      }
-      const message = safeParseWsMessage(payload);
-      if (!message) return;
-
-      const timestamp = Date.now();
-
+    const unsubscribe = subscribe((message, timestamp) => {
       if (message.type === "initial_state") {
         setConfigMap((prev) => {
           const next: ConfigMap = { ...prev };
@@ -143,13 +128,10 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
           };
         });
       }
-    };
+    });
 
-    return () => {
-      isActive = false;
-      socket.close();
-    };
-  }, []);
+    return unsubscribe;
+  }, [subscribe]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(Date.now()), 5000);
