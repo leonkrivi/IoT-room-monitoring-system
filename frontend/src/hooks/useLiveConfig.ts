@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { IdPair } from "@/types/IdPair";
+import type {
+  ConfigMap,
+  ConfigParamView,
+  DeviceConfigState,
+  ParamStatus,
+} from "@/types/LiveConfig";
 import { buildKey } from "@/lib/utils";
 import { useWebSocket } from "@/context/WebSocketContext";
 
@@ -10,30 +16,6 @@ function rejectionTimeout(currentMs: number | null): number {
   if (currentMs === null) return REJECTION_TIMEOUT_MS;
   return 3 * currentMs + REJECTION_OFFSET_MS;
 }
-
-export type ParamStatus = "applied" | "pending" | "rejected";
-
-export interface ConfigParamView {
-  id: string;
-  parameter: string;
-  value: string;
-  requestedValue: string;
-  status: ParamStatus;
-  lastUpdated: string;
-}
-
-interface DeviceConfigState {
-  hbIntervalMs: number | null;
-  sensorRateMs: number | null;
-  requestedHbIntervalMs: number | null;
-  requestedSensorRateMs: number | null;
-  requestedHbAt: number | null;
-  requestedSensorAt: number | null;
-  hbUpdatedAt: number | null;
-  sensorUpdatedAt: number | null;
-}
-
-type ConfigMap = Record<string, DeviceConfigState>;
 
 function emptyState(): DeviceConfigState {
   return {
@@ -97,10 +79,38 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
           const next: ConfigMap = { ...prev };
           for (const [key, value] of Object.entries(message.data)) {
             const existing = next[key] ?? emptyState();
+            const nextHb = value.config?.hbIntervalMs ?? existing.hbIntervalMs;
+            const nextSensor =
+              value.config?.sensorRateMs ?? existing.sensorRateMs;
+
             next[key] = {
               ...existing,
-              hbIntervalMs: value.config?.hbIntervalMs ?? existing.hbIntervalMs,
-              sensorRateMs: value.config?.sensorRateMs ?? existing.sensorRateMs,
+              hbIntervalMs: nextHb,
+              sensorRateMs: nextSensor,
+              requestedHbIntervalMs:
+                value.config?.hbIntervalMs !== undefined
+                  ? nextHb
+                  : existing.requestedHbIntervalMs,
+              requestedSensorRateMs:
+                value.config?.sensorRateMs !== undefined
+                  ? nextSensor
+                  : existing.requestedSensorRateMs,
+              requestedHbAt:
+                value.config?.hbIntervalMs !== undefined
+                  ? null
+                  : existing.requestedHbAt,
+              requestedSensorAt:
+                value.config?.sensorRateMs !== undefined
+                  ? null
+                  : existing.requestedSensorAt,
+              hbUpdatedAt:
+                value.config?.hbIntervalMs !== undefined
+                  ? timestamp
+                  : existing.hbUpdatedAt,
+              sensorUpdatedAt:
+                value.config?.sensorRateMs !== undefined
+                  ? timestamp
+                  : existing.sensorUpdatedAt,
             };
           }
           return next;
@@ -120,6 +130,18 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
               ...existing,
               hbIntervalMs: hbIntervalMs ?? existing.hbIntervalMs,
               sensorRateMs: sensorRateMs ?? existing.sensorRateMs,
+              requestedHbIntervalMs:
+                hbIntervalMs !== undefined
+                  ? hbIntervalMs
+                  : existing.requestedHbIntervalMs,
+              requestedSensorRateMs:
+                sensorRateMs !== undefined
+                  ? sensorRateMs
+                  : existing.requestedSensorRateMs,
+              requestedHbAt:
+                hbIntervalMs !== undefined ? null : existing.requestedHbAt,
+              requestedSensorAt:
+                sensorRateMs !== undefined ? null : existing.requestedSensorAt,
               hbUpdatedAt:
                 hbIntervalMs !== undefined ? timestamp : existing.hbUpdatedAt,
               sensorUpdatedAt:
@@ -135,11 +157,13 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
     return unsubscribe;
   }, [subscribe]);
 
+  // Update "now" every 5 seconds to trigger status recalculations and potential rejection state updates
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(Date.now()), 5000);
     return () => window.clearInterval(intervalId);
   }, []);
 
+  // Clear any pending rejection timers when the component unmounts
   useEffect(() => {
     return () => {
       rejectionTimers.current.forEach((timer) => clearTimeout(timer));
@@ -178,16 +202,15 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
       };
     });
 
-    const currentState = configMap[key] ?? emptyState();
     if (params.hbIntervalMs !== undefined) {
-      const hbTimeout = rejectionTimeout(currentState.hbIntervalMs);
+      const hbTimeout = rejectionTimeout(params.hbIntervalMs);
       const hbTimerId = setTimeout(() => setNow(Date.now()), hbTimeout + 100);
       const prevHb = rejectionTimers.current.get(`${key}:hb`);
       if (prevHb) clearTimeout(prevHb);
       rejectionTimers.current.set(`${key}:hb`, hbTimerId);
     }
     if (params.sensorRateMs !== undefined) {
-      const sensorTimeout = rejectionTimeout(currentState.sensorRateMs);
+      const sensorTimeout = rejectionTimeout(params.sensorRateMs);
       const sensorTimerId = setTimeout(
         () => setNow(Date.now()),
         sensorTimeout + 100,
@@ -198,6 +221,7 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
     }
   }
 
+  // If no device is selected, return default rows with "—" values and "applied" status
   if (!selected) {
     return {
       rows: [
@@ -230,14 +254,14 @@ export function useLiveConfig(selected: IdPair | null): UseLiveConfigResult {
     state.requestedHbIntervalMs,
     state.requestedHbAt,
     now,
-    rejectionTimeout(state.hbIntervalMs),
+    rejectionTimeout(state.requestedHbIntervalMs ?? state.hbIntervalMs),
   );
   const sensorStatus = deriveStatus(
     state.sensorRateMs,
     state.requestedSensorRateMs,
     state.requestedSensorAt,
     now,
-    rejectionTimeout(state.sensorRateMs),
+    rejectionTimeout(state.requestedSensorRateMs ?? state.sensorRateMs),
   );
 
   return {
