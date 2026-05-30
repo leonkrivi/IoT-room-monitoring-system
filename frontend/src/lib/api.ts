@@ -6,6 +6,18 @@ const API_BASE = (import.meta.env.VITE_API_BASE ?? "localhost:3000")
 const protocol = window.location.protocol === "https:" ? "https:" : "http:";
 const BASE_URL = `${protocol}//${API_BASE}`;
 type ApiResponse<T> = Promise<T>;
+type LabeledOption<T extends string> = { value: T; label: string };
+type PresetsResponse = {
+  ok: boolean;
+  configPresets: {
+    hbIntervalMs: number[];
+    sensorRateMs: number[];
+  };
+  queryPresets: {
+    hours: number[];
+    granularities: LabeledOption<string>[];
+  };
+};
 
 async function request<T>(
   method: string,
@@ -41,6 +53,9 @@ export class ApiError extends Error {
 }
 
 export const api = {
+  presets: {
+    get: () => request<PresetsResponse>("GET", "/presets"),
+  },
   auth: {
     login: (password: string) =>
       request<{ message: string; passwordChangeRequired: boolean }>(

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { PencilIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -5,13 +6,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { api } from "@/lib/api";
 
-// Must match backend ALLOWED_HB_INTERVAL_MS and ALLOWED_SENSOR_RATE_MS in constants.js
-// TODO: fetch from backend (e.g. GET /devices/config-presets) to avoid duplication
-const PRESET_VALUES: Record<string, number[]> = {
-  "hb-interval": [5000, 10000, 15000, 30000, 60000],
-  "sensor-rate": [500, 1000, 2000, 5000, 10000],
-};
+function formatMsLabel(value: number) {
+  return `${value}ms`;
+}
 
 interface ConfigPresetPopoverProps {
   paramId: string;
@@ -22,7 +21,30 @@ export function ConfigPresetPopover({
   paramId,
   onSelect,
 }: ConfigPresetPopoverProps) {
-  const presets = PRESET_VALUES[paramId] ?? [];
+  const [configPresets, setConfigPresets] = useState({
+    hbIntervalMs: [] as number[],
+    sensorRateMs: [] as number[],
+  });
+
+  useEffect(() => {
+    let active = true;
+    api.presets
+      .get()
+      .then(({ configPresets }) => {
+        if (active) setConfigPresets(configPresets);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const presets =
+    paramId === "hb-interval"
+      ? configPresets.hbIntervalMs
+      : paramId === "sensor-rate"
+        ? configPresets.sensorRateMs
+        : [];
 
   return (
     <Popover>
@@ -37,13 +59,13 @@ export function ConfigPresetPopover({
           Set value
         </p>
         <div className="flex flex-col gap-1">
-          {presets.map((ms) => (
+          {presets.map((value) => (
             <button
-              key={ms}
+              key={value}
               className="rounded px-3 py-1.5 text-left font-mono text-sm hover:bg-muted"
-              onClick={() => onSelect(ms)}
+              onClick={() => onSelect(value)}
             >
-              {ms}ms
+              {formatMsLabel(value)}
             </button>
           ))}
         </div>

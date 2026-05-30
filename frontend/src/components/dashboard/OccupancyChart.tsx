@@ -19,26 +19,7 @@ import { api } from "@/lib/api";
 import { getLocalTimeZone } from "@/lib/utils";
 import type { RoomStateEntry } from "@/types/RoomStateEntry";
 
-// Must match backend ALLOWED_HOURS and ALLOWED_GRANULARITIES in constants.js
-// TODO: fetch from backend (e.g. GET /room-state/query-presets) to avoid duplication
-const HOURS_OPTIONS = [
-  { value: 1, label: "Last 1 hour" },
-  { value: 3, label: "Last 3 hours" },
-  { value: 6, label: "Last 6 hours" },
-  { value: 12, label: "Last 12 hours" },
-  { value: 24, label: "Last 24 hours" },
-  { value: 48, label: "Last 48 hours" },
-  { value: 168, label: "Last 7 days" },
-];
-
-const GRANULARITY_OPTIONS = [
-  { value: "1m", label: "1 minute" },
-  { value: "5m", label: "5 minutes" },
-  { value: "15m", label: "15 minutes" },
-  { value: "1h", label: "1 hour" },
-  { value: "6h", label: "6 hours" },
-  { value: "1d", label: "1 day" },
-];
+type LabeledOption<T extends string> = { value: T; label: string };
 
 type RoomState = "UNOCCUPIED" | "OCCUPIED_STATIC" | "OCCUPIED_ACTIVE";
 
@@ -98,6 +79,12 @@ function formatTime(iso: string, granularity: string): string {
   return `${dateStr}, ${timeStr}`;
 }
 
+function formatHoursLabel(value: number): string {
+  if (value === 168) return "Last 7 days";
+  if (value === 1) return "Last 1 hour";
+  return `Last ${value} hours`;
+}
+
 function isRoomState(s: string): s is RoomState {
   return (
     s === "UNOCCUPIED" || s === "OCCUPIED_STATIC" || s === "OCCUPIED_ACTIVE"
@@ -143,9 +130,42 @@ export function OccupancyChart({
 }) {
   const [hours, setHours] = useState(12);
   const [granularity, setGranularity] = useState("15m");
+  const [hoursOptions, setHoursOptions] = useState([] as number[]);
+  const [granularityOptions, setGranularityOptions] = useState(
+    [] as LabeledOption<string>[],
+  );
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    api.presets
+      .get()
+      .then(({ queryPresets }) => {
+        if (!active) return;
+        const nextHours = queryPresets.hours;
+        const nextGranularities = queryPresets.granularities;
+        setHoursOptions(nextHours);
+        setGranularityOptions(nextGranularities);
+        if (nextHours.length) {
+          setHours((current) =>
+            nextHours.includes(current) ? current : nextHours[0],
+          );
+        }
+        if (nextGranularities.length) {
+          setGranularity((current) =>
+            nextGranularities.some((option) => option.value === current)
+              ? current
+              : nextGranularities[0].value,
+          );
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const fetchData = useCallback(() => {
     if (!roomId || !deviceId) return;
@@ -172,8 +192,7 @@ export function OccupancyChart({
     fetchData();
   }, [fetchData]);
 
-  const selectedHoursLabel =
-    HOURS_OPTIONS.find((o) => o.value === hours)?.label ?? "";
+  const selectedHoursLabel = hoursOptions.length ? formatHoursLabel(hours) : "";
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card">
@@ -210,9 +229,9 @@ export function OccupancyChart({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {HOURS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={String(o.value)}>
-                      {o.label}
+                  {hoursOptions.map((value) => (
+                    <SelectItem key={value} value={String(value)}>
+                      {formatHoursLabel(value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -223,9 +242,9 @@ export function OccupancyChart({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {GRANULARITY_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
+                  {granularityOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
