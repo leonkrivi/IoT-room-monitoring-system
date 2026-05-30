@@ -14,7 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 
 interface WebSocketContextType {
   isConnected: boolean;
-  subscribe: (listener: (msg: WsMessage, ts: number) => void) => () => void;
+  subscribe: (listener: (msg: WsMessage, ts: number) => void) => () => void; // registers a listener and returns an unsubscribe function
   lastMessageAt: number | undefined;
 }
 
