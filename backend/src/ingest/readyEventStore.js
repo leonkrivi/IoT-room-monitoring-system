@@ -22,7 +22,17 @@ export function createReadyEventStore({ cache, persistence }) {
         });
 
         if (stored) {
-          cachedConfig.sensorRateMs = event.sensorRateMs;
+          cache.setDeviceConfig(event.roomId, event.deviceId, {
+            sensorRateMs: event.sensorRateMs,
+          });
+          eventBus.emit("ws_broadcast", {
+            type: "device_config_update",
+            data: {
+              roomId: event.roomId,
+              deviceId: event.deviceId,
+              sensorRateMs: event.sensorRateMs,
+            },
+          });
         }
       }
 

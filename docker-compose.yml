@@ -10,11 +10,10 @@ services:
       mosquitto:
         condition: service_started # app has retry logic for MQTT connection
     ports:
-      - 3000:3000
+      - ${BACKEND_PORT}:3000
     volumes:
       - sqlite-data:/app/data
     environment:
-      BACKEND_PORT: 3000
       INFLUXDB_URL: http://influxdb:8086
       INFLUXDB_ORG: ${DOCKER_INFLUXDB_INIT_ORG}
       INFLUXDB_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET}
@@ -24,6 +23,19 @@ services:
 
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       SQLITE_PATH: /app/data/app.db
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #   image: iot-room-monitor-frontend
+  #   container_name: IoT-RoomMonitor-frontend
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #   ports:
+  #     - ${FRONTEND_PORT}:6000
+  #   environment:
+  #     API_BASE_URL: http://backend:3000
 
   influxdb:
     image: influxdb:2.7

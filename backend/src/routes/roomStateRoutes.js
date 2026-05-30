@@ -1,5 +1,6 @@
 import express from "express";
 import { dataFetcher } from "#src/globals/dataFetcher.js";
+import { ALLOWED_HOURS, ALLOWED_GRANULARITIES } from "#src/utils/constants.js";
 
 const router = express.Router();
 
@@ -8,23 +9,45 @@ const router = express.Router();
 // expected query params:
 // - days: optional, number of days to look back for recent history (default: 1 day)
 // - granularity: optional, one of "minute", "hour", "day" (default: 15m)
-router.get("/room_state/room/:roomId/history/recent", async (req, res) => {
+router.get("/history_recent", async (req, res) => {
   try {
-    const { roomId } = req.params;
+    const roomId = req.query.roomid;
+    const deviceId = req.query.deviceid;
 
-    const allRoomIds = await dataFetcher.getAllRoomIds();
-    // TODO: consider caching room IDs
-    if (!allRoomIds.includes(roomId)) {
-      return res.status(404).json({ ok: false, error: "Room not found" });
+    const allIdPairs = await dataFetcher.getAllIdPairs();
+    const validPair = allIdPairs.some(
+      (pair) => pair.roomId === roomId && pair.deviceId === deviceId,
+    );
+    if (!validPair) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Room or device not found" });
     }
     // TODO: optional, add hash mapping for roomId to avoid exposing internal IDs
 
-    const days = req.query.days ? parseInt(req.query.days) : undefined;
-    const { granularity } = req.query;
+    const hours = req.query.hours ? parseInt(req.query.hours, 10) : undefined;
+    if (hours !== undefined && !ALLOWED_HOURS.includes(hours)) {
+      return res.status(400).json({
+        ok: false,
+        error: `Invalid hours value. Allowed values: ${ALLOWED_HOURS.join(", ")}`,
+      });
+    }
 
-    const data = await dataFetcher.getRecentRoomStateHistory(
+    const granularity = req.query.granularity;
+    if (
+      granularity !== undefined &&
+      !ALLOWED_GRANULARITIES.includes(granularity)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: `Invalid granularity value. Allowed values: ${ALLOWED_GRANULARITIES.join(", ")}`,
+      });
+    }
+
+    const data = await dataFetcher.getRoomStateHistoryRecent(
       roomId,
-      days,
+      deviceId,
+      hours,
       granularity,
     );
     res.json({ ok: true, data: data });
@@ -37,19 +60,26 @@ router.get("/room_state/room/:roomId/history/recent", async (req, res) => {
 // - startTime: required, ISO string or timestamp in ms
 // - endTime: required, ISO string or timestamp in ms
 // - granularity: optional, one of "minute", "hour", "day" (default: 15m)
-router.get("/room_state/room/:roomId/history/period", async (req, res) => {
+router.get("/history_period", async (req, res) => {
   try {
-    const { roomId } = req.params;
+    const roomId = req.query.roomid;
+    const deviceId = req.query.deviceid;
 
-    const allRoomIds = await dataFetcher.getAllRoomIds();
-    if (!allRoomIds.includes(roomId)) {
-      return res.status(404).json({ ok: false, error: "Room not found" });
+    const allIdPairs = await dataFetcher.getAllIdPairs();
+    const validPair = allIdPairs.some(
+      (pair) => pair.roomId === roomId && pair.deviceId === deviceId,
+    );
+    if (!validPair) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Room or device not found" });
     }
 
     const { startTime, endTime, granularity } = req.query;
 
-    const data = await dataFetcher.getRoomStateHistory(
+    const data = await dataFetcher.getRoomStateHistoryPeriod(
       roomId,
+      deviceId,
       startTime,
       endTime,
       granularity,

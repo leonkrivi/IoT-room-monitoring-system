@@ -1,6 +1,6 @@
 import {
-  dbGetRecentRoomStateHistory,
-  dbGetRoomStateHistory,
+  dbGetRoomStateHistoryRecent,
+  dbGetRoomStateHistoryPeriod,
   dbGetLastRoomStateForDevice,
 } from "#src/database/influxRead.js";
 import { sqliteFetch } from "#src/database/sqliteFetch.js";
@@ -12,11 +12,11 @@ export function createDataFetcher() {
     try {
       const ids = await sqliteFetch.dbGetAllIdPairs();
 
-      const results = [];
-      for (const { roomId, deviceId } of ids) {
-        const key = `${roomId}::${deviceId}`;
-        results.push(await dbGetLastRoomStateForDevice(roomId, deviceId));
-      }
+      const results = await Promise.all(
+        ids.map(({ roomId, deviceId }) =>
+          dbGetLastRoomStateForDevice(roomId, deviceId),
+        ),
+      );
       return results;
     } catch (err) {
       console.error(TAG, "Error fetching last room states:", err.message);
@@ -25,11 +25,12 @@ export function createDataFetcher() {
   }
 
   return {
-    getRecentRoomStateHistory: dbGetRecentRoomStateHistory,
-    getRoomStateHistory: dbGetRoomStateHistory,
+    getRoomStateHistoryRecent: dbGetRoomStateHistoryRecent,
+    getRoomStateHistoryPeriod: dbGetRoomStateHistoryPeriod,
     getAllLastRoomState: getAllLastRoomState,
     getAllIdPairs: () => sqliteFetch.dbGetAllIdPairs(),
     getAllRoomIds: () => sqliteFetch.dbGetAllRoomIds(),
     getAllDeviceStatuses: () => sqliteFetch.dbGetAllDeviceStatuses(),
+    getAllDeviceConfigs: () => sqliteFetch.dbGetAllDeviceConfigs(),
   };
 }

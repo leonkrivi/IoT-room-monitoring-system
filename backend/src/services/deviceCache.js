@@ -16,10 +16,6 @@ export function createDeviceCache() {
     return init;
   }
 
-  function getRoomStateAll(roomId, deviceId) {
-    return roomStateByDevice;
-  }
-
   function setDeviceRoomState(roomId, deviceId, roomState) {
     const key = makeDeviceKey(roomId, deviceId);
     roomStateByDevice.set(key, roomState);
@@ -36,6 +32,15 @@ export function createDeviceCache() {
     };
     configByDevice.set(key, init);
     return init;
+  }
+
+  function setDeviceConfig(roomId, deviceId, config) {
+    const key = makeDeviceKey(roomId, deviceId);
+    const existing = configByDevice.get(key) ?? {
+      hbIntervalMs: null,
+      sensorRateMs: null,
+    };
+    configByDevice.set(key, { ...existing, ...config });
   }
 
   // ==================== Sensor Status Methods ====================
@@ -69,7 +74,7 @@ export function createDeviceCache() {
   }
 
   // ==================== Hydration ====================
-  function hydrateCache(statuses, roomStates) {
+  function hydrateCache(statuses, roomStates, configs = []) {
     for (const row of statuses) {
       const { roomId, deviceId, sensorStatus, connectionStatus } = row;
       const key = makeDeviceKey(roomId, deviceId);
@@ -90,12 +95,26 @@ export function createDeviceCache() {
         roomStateByDevice.set(key, roomState);
       }
     }
+
+    for (const row of configs) {
+      const { roomId, deviceId, hbIntervalMs, sensorRateMs } = row;
+      const key = makeDeviceKey(roomId, deviceId);
+      const existing = configByDevice.get(key) ?? {
+        hbIntervalMs: null,
+        sensorRateMs: null,
+      };
+      configByDevice.set(key, {
+        hbIntervalMs: hbIntervalMs ?? existing.hbIntervalMs,
+        sensorRateMs: sensorRateMs ?? existing.sensorRateMs,
+      });
+    }
   }
 
   return {
     getOrInitDeviceRoomState,
     setDeviceRoomState,
     getOrInitDeviceConfig,
+    setDeviceConfig,
     getOrInitSensorStatus,
     setSensorStatus,
     getOrInitDeviceConnection,

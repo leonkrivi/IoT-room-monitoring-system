@@ -28,6 +28,12 @@ class AuthService {
     const newPasswordHash = `${key},${salt},${params}`;
 
     await sqliteLogin.setPasswordHash(newPasswordHash);
+    await sqliteLogin.setPasswordChangeRequired(false);
+  }
+
+  async isPasswordChangeRequired() {
+    const value = await sqliteLogin.getPasswordChangeRequired();
+    return Boolean(value);
   }
 
   // extends session if valid, otherwise deletes it and returns null
@@ -36,13 +42,13 @@ class AuthService {
     if (!session) return null;
 
     const now = new Date();
-    if (now > new Date(session.expiresAt)) {
+    if (now > new Date(session.expires_at)) {
       await sqliteLogin.deleteSessionById(sessionId);
       return null;
     } else {
-      // extend session expiration by 30 minutes
+      // extend session expiration by 15 minutes
       const newExpiresAt = new Date(
-        now.getTime() + 30 * 60 * 1000,
+        now.getTime() + 15 * 60 * 1000,
       ).toISOString();
       await sqliteLogin.updateSessionExpiration(sessionId, newExpiresAt);
     }
@@ -51,7 +57,7 @@ class AuthService {
 
   async createNewSession() {
     const sessionId = randomUUID();
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     await sqliteLogin.createSession(sessionId, expiresAt);
     return sessionId;
   }

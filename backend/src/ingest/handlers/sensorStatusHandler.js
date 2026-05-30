@@ -61,8 +61,17 @@ export function createSensorStatusHandler({ cache, persistence, tracker }) {
     }
 
     if (hbIntervalChanged) {
-      // update cache with new hb interval even if sensor status didn't change
-      cachedConfig.hbIntervalMs = sensorStatusPayload.hbIntervalMs;
+      cache.setDeviceConfig(topicMeta.roomId, topicMeta.deviceId, {
+        hbIntervalMs: sensorStatusPayload.hbIntervalMs,
+      });
+      eventBus.emit("ws_broadcast", {
+        type: "device_config_update",
+        data: {
+          roomId: topicMeta.roomId,
+          deviceId: topicMeta.deviceId,
+          hbIntervalMs: sensorStatusPayload.hbIntervalMs,
+        },
+      });
     }
 
     console.log(

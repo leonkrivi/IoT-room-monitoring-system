@@ -55,6 +55,17 @@ class SqliteFetch {
       connectionStatus: row.connection_status,
     }));
   }
+
+  async dbGetAllDeviceConfigs() {
+    const stmt = this.#stmts.getAllDeviceConfigs;
+    const rows = stmt.all();
+    return rows.map((row) => ({
+      roomId: IdSchema.parse(row.room_id),
+      deviceId: IdSchema.parse(row.device_id),
+      hbIntervalMs: row.hb_interval_ms,
+      sensorRateMs: row.sensor_rate_ms,
+    }));
+  }
 }
 
 export const sqliteFetch = new SqliteFetch();

@@ -14,9 +14,10 @@ router.post("/login", async (req, res) => {
     if (!isValid) return res.status(401).json({ error: "Invalid password" });
 
     const sessionId = await authService.createNewSession();
+    const passwordChangeRequired = await authService.isPasswordChangeRequired();
 
     res.cookie("sessionId", sessionId, { httpOnly: true });
-    res.json({ message: "Login successful" });
+    res.json({ message: "Login successful", passwordChangeRequired });
   } catch (err) {
     console.error(`Login error: ${err.message}`);
     res.status(500).json({ error: "Internal server error" });
@@ -45,6 +46,16 @@ router.post("/change-password", checkSession, async (req, res) => {
     res.json({ message: "Password updated successfully" });
   } catch (err) {
     console.error(`Change password error: ${err.message}`);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/status", checkSession, async (req, res) => {
+  try {
+    const passwordChangeRequired = await authService.isPasswordChangeRequired();
+    res.json({ isAuthenticated: true, passwordChangeRequired });
+  } catch (err) {
+    console.error(`Auth status error: ${err.message}`);
     res.status(500).json({ error: "Internal server error" });
   }
 });

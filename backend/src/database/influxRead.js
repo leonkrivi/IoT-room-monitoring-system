@@ -1,13 +1,15 @@
-import { allowedInfluxGranularities } from "#src/utils/constants.js";
 import { influxQueryApi, influxEnabled, influxConfig } from "./influxClient.js";
 
 const TAG = "[Influx Reader]";
 
-const DataRetentionMs = parseDurationToMs(process.env.INFLUXDB_DATA_RETENTION || "720h");
+const DataRetentionMs = parseDurationToMs(
+  process.env.INFLUXDB_DATA_RETENTION || "720h",
+);
 
-export async function dbGetRecentRoomStateHistory(
+export async function dbGetRoomStateHistoryRecent(
   roomId,
-  timeRangeDays = 1,
+  deviceId,
+  timeRangeHours = 24, // if not provided, defaults to last 24 hours
   granularity = "15m", // if not provided, defaults to 15 minutes granularity
 ) {
   if (!influxEnabled || !influxQueryApi) {
@@ -15,29 +17,25 @@ export async function dbGetRecentRoomStateHistory(
   }
 
   // run checks
-  if (!Number.isInteger(timeRangeDays) || timeRangeDays <= 0) {
+  if (!Number.isInteger(timeRangeHours) || timeRangeHours <= 0) {
     throw new Error(
-      `${TAG} invalid time range: timeRangeDays must be a positive number`,
+      `${TAG} invalid time range: timeRangeHours must be a positive number`,
     );
   }
-  if (timeRangeDays > DataRetentionMs / (24 * 60 * 60 * 1000)) {
+  if (timeRangeHours > DataRetentionMs / (60 * 60 * 1000)) {
     throw new Error(
-      `${TAG} invalid time range: given range is greater than the allowed maximum (${DataRetentionMs / (24 * 60 * 60 * 1000)}).`,
+      `${TAG} invalid time range: given range is greater than the allowed maximum (${DataRetentionMs / (60 * 60 * 1000)}).`,
     );
   }
-
-  const qGranularity =
-    granularity && allowedInfluxGranularities.includes(granularity)
-      ? granularity
-      : "15m";
 
   const fluxQuery = `
       from(bucket: "${influxConfig.bucket}")
-        |> range(start: -${timeRangeDays}d)
+        |> range(start: -${timeRangeHours}h)
         |> filter(fn: (r) => r["_measurement"] == "mmWave_data_interpreted")
         |> filter(fn: (r) => r["_field"] == "room_state")
         |> filter(fn: (r) => r["room_id"] == "${roomId}")
-        |> aggregateWindow(every: ${qGranularity}, fn: last, createEmpty: false)
+        |> filter(fn: (r) => r["device_id"] == "${deviceId}")
+        |> aggregateWindow(every: ${granularity}, fn: last, createEmpty: false)
         |> keep(columns: ["_time", "_value", "room_id", "device_id"])
     `;
 
@@ -50,8 +48,9 @@ export async function dbGetRecentRoomStateHistory(
   }));
 }
 
-export async function dbGetRoomStateHistory(
-  roomId, // integer
+export async function dbGetRoomStateHistoryPeriod(
+  roomId,
+  deviceId, // integer
   timeRangeStart,
   timeRangeEnd,
   granularity = "15m", // if not provided, defaults to 15 minutes granularity
@@ -82,14 +81,8 @@ export async function dbGetRoomStateHistory(
   const timeRangeMs = end.getTime() - start.getTime();
   if (timeRangeMs > DataRetentionMs)
     throw new Error(
-      `${TAG} invalid time range: given range is greater than the allowed maximum (${DataRetentionMs / (24 * 60 * 60 * 1000)}).`,
+      `${TAG} invalid time range: given range is greater than the allowed maximum.`,
     );
-
-  // validate granularity, fallback to 15m if invalid or not provided
-  const qGranularity =
-    granularity && allowedInfluxGranularities.includes(granularity)
-      ? granularity
-      : "15m";
 
   const fluxQuery = `
       from(bucket: "${influxConfig.bucket}")
@@ -97,7 +90,8 @@ export async function dbGetRoomStateHistory(
         |> filter(fn: (r) => r["_measurement"] == "mmWave_data_interpreted")
         |> filter(fn: (r) => r["_field"] == "room_state")
         |> filter(fn: (r) => r["room_id"] == "${roomId}")
-        |> aggregateWindow(every: ${qGranularity}, fn: last, createEmpty: false)
+        |> filter(fn: (r) => r["device_id"] == "${deviceId}")
+        |> aggregateWindow(every: ${granularity}, fn: last, createEmpty: false)
         |> keep(columns: ["_time", "_value", "room_id", "device_id"])
     `;
 

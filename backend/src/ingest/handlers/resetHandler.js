@@ -22,19 +22,26 @@ export function createResetHandler({
     );
     tracker.resetToBefore(key, resetPayload.sensorSeq);
 
-    const cachedConfig = cache.getOrInitDeviceConfig(
-      topicMeta.roomId,
-      topicMeta.deviceId,
-    );
-    cachedConfig.hbIntervalMs = resetPayload.hbRateMs;
-    cachedConfig.sensorRateMs = resetPayload.sensorRateMs;
-
     await persistence.storeDeviceConfig({
       roomId: topicMeta.roomId,
       deviceId: topicMeta.deviceId,
       hbIntervalMs: resetPayload.hbRateMs,
       sensorRateMs: resetPayload.sensorRateMs,
       receivedAt,
+    });
+
+    cache.setDeviceConfig(topicMeta.roomId, topicMeta.deviceId, {
+      hbIntervalMs: resetPayload.hbRateMs,
+      sensorRateMs: resetPayload.sensorRateMs,
+    });
+    eventBus.emit("ws_broadcast", {
+      type: "device_config_update",
+      data: {
+        roomId: topicMeta.roomId,
+        deviceId: topicMeta.deviceId,
+        hbIntervalMs: resetPayload.hbRateMs,
+        sensorRateMs: resetPayload.sensorRateMs,
+      },
     });
 
     cache.setSensorStatus(topicMeta.roomId, topicMeta.deviceId, "unknown");

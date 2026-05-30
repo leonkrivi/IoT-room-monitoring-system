@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 
 const TAG = "[WS Test Client]";
-const PORT = Number(process.env.BACKEND_PORT) || 3000;
+const PORT = Number(process.env.BACKEND_PORT);
 
 const ws = new WebSocket(`ws://localhost:${PORT}`);
 

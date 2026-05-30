@@ -14,3 +14,20 @@ export async function checkSession(req, res, next) {
     return res.sendStatus(500);
   }
 }
+
+export async function ensurePasswordUpdated(req, res, next) {
+  try {
+    const passwordChangeRequired = await authService.isPasswordChangeRequired();
+    if (passwordChangeRequired) {
+      return res.status(403).json({
+        error: "Password change required",
+        passwordChangeRequired: true,
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error(`Password guard error: ${err.message}`);
+    return res.sendStatus(500);
+  }
+}

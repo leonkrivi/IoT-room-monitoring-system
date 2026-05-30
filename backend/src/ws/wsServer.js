@@ -8,7 +8,7 @@ export function initWebSocketServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer });
   const port = httpServer.address()
     ? httpServer.address().port
-    : process.env.BACKEND_PORT || 3000;
+    : process.env.BACKEND_PORT;
   console.log(TAG, `running on ws://localhost:${port}`);
 
   wss.on("connection", async (ws) => {

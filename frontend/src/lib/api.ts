@@ -1,0 +1,133 @@
+import type { RoomStateEntry } from "@/types/RoomStateEntry";
+
+const API_BASE = (import.meta.env.VITE_API_BASE ?? "localhost:3000")
+  .replace(/^\w+:\/\//, "")
+  .trim();
+const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+const BASE_URL = `${protocol}//${API_BASE}`;
+type ApiResponse<T> = Promise<T>;
+type LabeledOption<T extends string> = { value: T; label: string };
+type PresetsResponse = {
+  ok: boolean;
+  configPresets: {
+    hbIntervalMs: number[];
+    sensorRateMs: number[];
+  };
+  queryPresets: {
+    hours: number[];
+    granularities: LabeledOption<string>[];
+  };
+};
+
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): ApiResponse<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(
+      res.status,
+      (data as { error?: string }).error ?? res.statusText,
+    );
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export const api = {
+  presets: {
+    get: () => request<PresetsResponse>("GET", "/presets"),
+  },
+  auth: {
+    login: (password: string) =>
+      request<{ message: string; passwordChangeRequired: boolean }>(
+        "POST",
+        "/auth/login",
+        { password },
+      ),
+
+    logout: () => request<{ message: string }>("POST", "/auth/logout"),
+
+    changePassword: (newPassword: string) =>
+      request<{ message: string }>("POST", "/auth/change-password", {
+        newPassword,
+      }),
+
+    status: () =>
+      request<{ isAuthenticated: boolean; passwordChangeRequired: boolean }>(
+        "GET",
+        "/auth/status",
+      ),
+  },
+
+  roomState: {
+    getRoomStateRecent: (
+      roomId: string,
+      deviceId: string,
+      hours?: string | number,
+      granularity?: string,
+    ) => {
+      roomId = encodeURIComponent(roomId);
+      deviceId = encodeURIComponent(deviceId);
+      hours = hours ? `&hours=${encodeURIComponent(hours.toString())}` : "";
+      granularity = granularity
+        ? `&granularity=${encodeURIComponent(granularity)}`
+        : "";
+      return request<{ data: RoomStateEntry[] }>(
+        "GET",
+        `/room-state/history_recent?roomid=${roomId}&deviceid=${deviceId}${hours}${granularity}`,
+      );
+    },
+  },
+
+  devices: {
+    list: () =>
+      request<{ data: { deviceId: string; roomId: string }[] }>(
+        "GET",
+        "/devices/list",
+      ),
+  },
+
+  mqtt: {
+    checkSensor: (roomId: string, deviceId: string) =>
+      request<{ ok: boolean }>(
+        "POST",
+        `/mqtt/publish/check_sensor?roomId=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}`,
+      ),
+    publishConfiguration: (
+      roomId: string,
+      deviceId: string,
+      configParams: { hb_rate?: number; sensor_rate?: number },
+    ) => {
+      const { hb_rate, sensor_rate } = configParams;
+      const hb_rate_q =
+        hb_rate !== undefined ? `&hb_rate=${encodeURIComponent(hb_rate)}` : "";
+      const sensor_rate_q =
+        sensor_rate !== undefined
+          ? `&sensor_rate=${encodeURIComponent(sensor_rate)}`
+          : "";
+      return request<{ ok: boolean }>(
+        "POST",
+        `/mqtt/publish/configuration?roomId=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}${hb_rate_q}${sensor_rate_q}`,
+      );
+    },
+  },
+};

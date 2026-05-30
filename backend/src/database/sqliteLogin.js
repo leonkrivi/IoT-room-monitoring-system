@@ -29,8 +29,14 @@ class SqliteLogin {
     this.#stmts.getPasswordHash = this.#db.prepare(
       "SELECT password_hash FROM user WHERE id = 1",
     );
+    this.#stmts.getPasswordChangeRequired = this.#db.prepare(
+      "SELECT change_password_required FROM user WHERE id = 1",
+    );
     this.#stmts.setPasswordHash = this.#db.prepare(
       "UPDATE user SET password_hash = ? WHERE id = 1",
+    );
+    this.#stmts.setPasswordChangeRequired = this.#db.prepare(
+      "UPDATE user SET change_password_required = ? WHERE id = 1",
     );
   }
 
@@ -63,8 +69,18 @@ class SqliteLogin {
     return row ? row.password_hash : null;
   }
 
+  async getPasswordChangeRequired() {
+    const row = this.#stmts.getPasswordChangeRequired.get();
+    return row ? row.change_password_required : null;
+  }
+
   async setPasswordHash(passwordHash) {
     return this.#stmts.setPasswordHash.run(passwordHash);
+  }
+
+  async setPasswordChangeRequired(value) {
+    const normalized = value ? 1 : 0;
+    return this.#stmts.setPasswordChangeRequired.run(normalized);
   }
 }
 
